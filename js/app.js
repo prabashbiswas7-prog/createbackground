@@ -166,7 +166,7 @@ ${canvasSection}
   <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
   <div class="section-body">
     ${colorCtrl('bg','Background',p.bg)}
-    ${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}
+    ${paletteCtrl('palette','Palette',p.palette)}
     ${sliderCtrl('density','Color Density',p.density,0,100,1)}
     ${colorCtrl('lineColor','Line Color',p.lineColor)}
   </div>
@@ -360,7 +360,7 @@ ${canvasSection}
 <div class="section">
   <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
   <div class="section-body">
-    ${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}
+    ${paletteCtrl('palette','Palette',p.palette)}
     ${sliderCtrl('amount','Grain',p.amount,0,100,1)}
   </div>
 </div>`,
@@ -499,7 +499,7 @@ ${canvasSection}
 </div>
 <div class="section">
   <div class="section-header"><span class="section-title">Palette</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}</div>
+  <div class="section-body">${paletteCtrl('palette','Palette',p.palette)}</div>
 </div>`,
 
       noise: `
@@ -558,7 +558,7 @@ ${canvasSection}
   <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
   <div class="section-body">
     ${colorCtrl('bg','Background',p.bg)}
-    ${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}
+    ${paletteCtrl('palette','Palette',p.palette)}
     ${colorCtrl('lineColor','Line Color',p.lineColor)}
   </div>
 </div>
@@ -602,7 +602,7 @@ ${canvasSection}
   <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
   <div class="section-body">
     ${colorCtrl('bg','Background',p.bg)}
-    ${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}
+    ${paletteCtrl('palette','Palette',p.palette)}
     ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
   </div>
 </div>`,
@@ -649,7 +649,7 @@ ${canvasSection}
 <div class="section">
   <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
   <div class="section-body">
-    ${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}
+    ${paletteCtrl('palette','Palette',p.palette)}
     ${toggleCtrl('drawEdges','Draw Edges',p.drawEdges)}
     ${colorCtrl('edgeColor','Edge Color',p.edgeColor||'#0a0a0f')}
   </div>
@@ -681,7 +681,7 @@ ${canvasSection}
 <div class="section">
   <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
   <div class="section-body">
-    ${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}
+    ${paletteCtrl('palette','Palette',p.palette)}
     ${sliderCtrl('colorCycles','Color Cycles',p.colorCycles,0,10,0.5)}
   </div>
 </div>`,
@@ -723,7 +723,7 @@ ${canvasSection}
   <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
   <div class="section-body">
     ${colorCtrl('bg','Background',p.bg)}
-    ${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}
+    ${paletteCtrl('palette','Palette',p.palette)}
     ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
   </div>
 </div>`,
@@ -743,7 +743,7 @@ ${canvasSection}
   <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
   <div class="section-body">
     ${colorCtrl('bg','Background',p.bg)}
-    ${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}
+    ${paletteCtrl('palette','Palette',p.palette)}
     ${colorCtrl('lineColor','Edge Color',p.lineColor||'rgba(0,0,0,0.15)')}
     ${sliderCtrl('stroke','Edge Weight',p.stroke,0,5,0.5)}
     ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
@@ -799,7 +799,7 @@ ${canvasSection}
   <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
   <div class="section-body">
     ${colorCtrl('bg','Background',p.bg)}
-    ${selectCtrl('palette','Palette',Object.keys(GS.PALETTES),p.palette)}
+    ${paletteCtrl('palette','Palette',p.palette)}
     ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
   </div>
 </div>`,
@@ -822,6 +822,21 @@ ${canvasSection}
   }
   function toggleCtrl(id,name,val){
     return `<div class="toggle-row"><span class="toggle-label">${name}</span><button class="toggle${val?' on':''}" id="${id}"></button></div>`;
+  }
+
+  function paletteCtrl(id, name, valArray) {
+    if (typeof valArray === 'string') valArray = GS.getPalette(valArray);
+    if (!Array.isArray(valArray)) valArray = ['#ffffff', '#000000'];
+    let html = `<div class="ctrl"><div class="ctrl-label"><span class="ctrl-name">${name}</span></div><div class="color-row palette-container" id="${id}-container" data-id="${id}">`;
+    valArray.forEach((c, idx) => {
+      let color = c;
+      if (Array.isArray(c)) color = c[1];
+      html += `<div class="color-swatch" style="background:${color}"><input type="color" class="palette-color-input" data-idx="${idx}" value="${color}"></div>`;
+    });
+    html += `<button class="btn btn-icon btn-ghost add-color-btn" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;">+</button>`;
+    html += `<button class="btn btn-icon btn-ghost remove-color-btn" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;">&times;</button>`;
+    html += `</div></div>`;
+    return html;
   }
 
   // ── Switch tool ──────────────────────────────────────────────
@@ -865,11 +880,63 @@ ${canvasSection}
     });
     // Auto-bind color inputs
     document.querySelectorAll('#sidebar-controls input[type=color]').forEach(el=>{
+      if (el.classList.contains('palette-color-input')) return; // handled separately
       el.addEventListener('input',()=>{
         p[el.id]=el.value;
         el.closest('.color-swatch').style.background=el.value;
         scheduleRender();
       });
+    });
+
+    // Auto-bind dynamic palettes
+    document.querySelectorAll('#sidebar-controls .palette-container').forEach(container => {
+      const pid = container.dataset.id;
+
+      // Coerce to array if it is a string palette name
+      if (typeof p[pid] === 'string') {
+        p[pid] = GS.getPalette(p[pid]);
+      } else if (!p[pid]) {
+        p[pid] = ['#ffffff', '#000000'];
+      }
+
+      const updateBinding = () => {
+        container.querySelectorAll('.palette-color-input').forEach(el => {
+          el.addEventListener('input', () => {
+            const idx = parseInt(el.dataset.idx);
+            if (Array.isArray(p[pid][idx])) {
+              p[pid][idx][1] = el.value;
+            } else {
+              p[pid][idx] = el.value;
+            }
+            el.closest('.color-swatch').style.background = el.value;
+            scheduleRender();
+          });
+        });
+      };
+
+      container.querySelector('.add-color-btn')?.addEventListener('click', () => {
+        const isStops = p[pid].length > 0 && Array.isArray(p[pid][0]);
+        if (isStops) {
+          p[pid].push([1, '#ffffff']);
+          p[pid].forEach((stop, i) => stop[0] = i / (p[pid].length - 1 || 1));
+        } else {
+          p[pid].push('#ffffff');
+        }
+        switchTool(currentTool);
+      });
+
+      container.querySelector('.remove-color-btn')?.addEventListener('click', () => {
+        if (p[pid].length > 2) {
+          p[pid].pop();
+          const isStops = p[pid].length > 0 && Array.isArray(p[pid][0]);
+          if (isStops) {
+             p[pid].forEach((stop, i) => stop[0] = i / (p[pid].length - 1 || 1));
+          }
+          switchTool(currentTool);
+        }
+      });
+
+      updateBinding();
     });
     // Auto-bind toggles
     document.querySelectorAll('#sidebar-controls .toggle').forEach(el=>{
@@ -974,7 +1041,10 @@ ${canvasSection}
     document.getElementById('btn-randomize')?.addEventListener('click',()=>{
       const p=params[currentTool];
       if(typeof p.seed!=='undefined') p.seed=Math.floor(Math.random()*99999);
-      if(typeof p.palette!=='undefined') p.palette=GS.randomPalette();
+      if(typeof p.palette!=='undefined') {
+        const num = 2 + Math.floor(Math.random() * 4);
+        p.palette = Array.from({length: num}, () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'));
+      }
       switchTool(currentTool);
     });
     // Export buttons

@@ -4,13 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GenStudio — Generative Design Tools</title>
-<meta name="description" content="20 powerful generative art tools in your browser. Create noise, gradients, flow fields, fractals, ASCII art, marble, topo maps and more. Free, no install.">
-<meta property="og:title" content="GenStudio — Generative Design Tools">
-<meta property="og:description" content="20 browser-based generative art tools. Free & instant.">
-<meta property="og:type" content="website">
 <link rel="stylesheet" href="css/main.css">
-<!-- Google AdSense — replace ca-pub-XXXXXXXX with your publisher ID -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -21,18 +15,6 @@
   <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">Loading tools…</div>
 </div>
 
-<!-- Header -->
-<header id="header">
-  <div class="logo">Gen<span>Studio</span></div>
-  <span class="tool-title" id="tool-title">Blocks</span>
-  <div class="header-actions">
-    <button class="btn btn-ghost btn-sm" id="btn-randomize" title="Randomize (Ctrl+R)">🎲 Randomize</button>
-    <button class="btn btn-ghost btn-sm" id="btn-jpg">JPG</button>
-    <button class="btn btn-ghost btn-sm" id="btn-png">PNG</button>
-    <button class="btn btn-primary btn-sm" id="btn-svg">SVG</button>
-  </div>
-</header>
-
 <!-- Main layout -->
 <div id="layout">
 
@@ -41,38 +23,24 @@
 
   <!-- Sidebar -->
   <aside id="sidebar">
-    <!-- Ad banner top of sidebar -->
-    <div class="ad-banner" id="ad-sidebar">
-      <!-- AdSense sidebar unit — replace with your ad slot -->
-      <ins class="adsbygoogle"
-        style="display:block;width:256px;height:90px"
-        data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-        data-ad-slot="XXXXXXXXXX"
-        data-full-width-responsive="false"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    <div class="sidebar-header">
+      <h2 id="tool-title" style="margin:0; font-size: 16px; font-weight: normal; color: var(--text);">Blocks</h2>
     </div>
     <!-- Controls injected here -->
     <div id="sidebar-controls"></div>
+    <div class="sidebar-actions">
+      <button class="btn btn-ghost" id="btn-randomize" title="Randomize (Ctrl+R)">Randomize <kbd>R</kbd></button>
+      <button class="btn btn-ghost" id="btn-reset">Reset <kbd>⌫</kbd></button>
+      <button class="btn btn-primary" id="btn-png">Export PNG <kbd>⌘S</kbd></button>
+      <button class="btn btn-ghost" id="btn-svg">Export SVG</button>
+      <button class="btn btn-ghost" id="btn-jpg" style="display:none;">Export JPG</button>
+    </div>
   </aside>
 
   <!-- Canvas area -->
   <main id="canvas-area">
     <div id="canvas-wrapper">
       <canvas id="main-canvas" width="800" height="800"></canvas>
-    </div>
-    <!-- Bottom bar with ad -->
-    <div id="bottom-bar">
-      <span style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;white-space:nowrap">
-        <span class="status-dot"></span> &nbsp;Ready &nbsp;·&nbsp; <kbd>Ctrl+S</kbd> export &nbsp;·&nbsp; <kbd>Ctrl+R</kbd> randomize
-      </span>
-      <!-- Leaderboard Ad -->
-      <div class="ad-banner" id="ad-bottom">
-        <ins class="adsbygoogle"
-          style="display:block;width:100%;height:30px"
-          data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-          data-ad-slot="XXXXXXXXXX"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-      </div>
     </div>
   </main>
 

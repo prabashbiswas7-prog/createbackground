@@ -130,6 +130,7 @@ const App = (() => {
   // ── Sidebar panels HTML ───────────────────────────────────────
   function makeSidebarHTML(tool) {
     const p=params[tool];
+    const gradientStops = Array.isArray(p.stops) ? p.stops : [[0,'#1a0533'],[1,'#f5d0fe']];
     const palList=Object.keys(GS.PALETTES).map(k=>`<option ${k===p.palette?'selected':''}>${k}</option>`).join('');
     const sizeList=Object.keys(GS.SIZES).map(k=>`<option value="${k}" ${p.w===GS.SIZES[k][0]&&p.h===GS.SIZES[k][1]?'selected':''}>${k}</option>`).join('');
 
@@ -190,7 +191,7 @@ ${canvasSection}
 <div class="section">
   <div class="section-header"><span class="section-title">Colors</span><span class="section-toggle">▾</span></div>
   <div class="section-body" id="grad-stops-ui">
-    ${p.stops.map((s,i)=>`<div class="ctrl toggle-row"><span class="ctrl-name">${Math.round(s[0]*100)}%</span>${colorCtrl('grad-c'+i,'',s[1])}</div>`).join('')}
+    ${gradientStops.map((s,i)=>`<div class="ctrl toggle-row"><span class="ctrl-name">${Math.round(s[0]*100)}%</span>${colorCtrl('grad-c'+i,'',s[1])}</div>`).join('')}
   </div>
 </div>
 <div class="section">

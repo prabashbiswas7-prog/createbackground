@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
 
 :root {
   --bg: #0a0a0f;
@@ -30,7 +30,7 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, Arial, sans-serif;
   font-size: 13px;
   overflow: hidden;
 }
@@ -114,7 +114,7 @@ html, body {
   width: var(--sidebar-w);
   background: var(--panel);
   border-right: 1px solid var(--border);
-  overflow-y: auto;
+  overflow: hidden;
   flex-shrink: 0;
   display: flex; flex-direction: column;
 }
@@ -122,9 +122,20 @@ html, body {
 #sidebar::-webkit-scrollbar-track { background: transparent; }
 #sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+#sidebar-controls {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+#sidebar-controls::-webkit-scrollbar { width: 4px; }
+#sidebar-controls::-webkit-scrollbar-track { background: transparent; }
+#sidebar-controls::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
 /* ── CANVAS AREA ── */
 #canvas-area {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   display: flex; flex-direction: column;
   overflow: hidden;
   background: var(--bg2);
@@ -132,10 +143,12 @@ html, body {
 
 #canvas-wrapper {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
   position: relative;
-  overflow: hidden;
+  overflow: auto;
 }
 
 #canvas-wrapper canvas, #canvas-wrapper svg {
@@ -235,7 +248,7 @@ input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 4px rgba(124,9
 /* Select */
 select {
   width: 100%; background: var(--bg3); border: 1px solid var(--border2);
-  color: var(--text); font-family: 'Space Grotesk', sans-serif;
+  color: var(--text); font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, Arial, sans-serif;
   font-size: 12px; padding: 6px 10px; border-radius: var(--radius-sm);
   cursor: pointer; outline: none; appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23606080'/%3E%3C/svg%3E");
@@ -284,7 +297,7 @@ select:focus { border-color: var(--accent); }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   padding: 7px 14px; border-radius: var(--radius-sm);
-  font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 12px; font-weight: 500;
   cursor: pointer; border: none; transition: all var(--transition);
   white-space: nowrap;
 }
@@ -312,7 +325,7 @@ input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
 /* Text input */
 input[type=text], textarea {
   width: 100%; background: var(--bg3); border: 1px solid var(--border2);
-  color: var(--text); font-family: 'Space Grotesk', sans-serif;
+  color: var(--text); font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, Arial, sans-serif;
   font-size: 12px; padding: 6px 10px; border-radius: var(--radius-sm); outline: none;
 }
 input[type=text]:focus, textarea:focus { border-color: var(--accent); }

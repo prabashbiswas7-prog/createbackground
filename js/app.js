@@ -129,7 +129,7 @@ const App = (() => {
 
   // ── Sidebar panels HTML ───────────────────────────────────────
   function makeSidebarHTML(tool) {
-    const p=params[tool];
+    const p={...Object.assign({}, ...Object.values(DEFAULTS)), ...(params[tool]||{})};
     const gradientStops = Array.isArray(p.stops) ? p.stops : [[0,'#1a0533'],[1,'#f5d0fe']];
     const palList=Object.keys(GS.PALETTES).map(k=>`<option ${k===p.palette?'selected':''}>${k}</option>`).join('');
     const sizeList=Object.keys(GS.SIZES).map(k=>`<option value="${k}" ${p.w===GS.SIZES[k][0]&&p.h===GS.SIZES[k][1]?'selected':''}>${k}</option>`).join('');

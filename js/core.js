@@ -106,7 +106,10 @@ const PALETTES = {
   'Cyberpunk':   ['#0d0d1a','#1a0033','#ff00ff','#00ffff','#ffff00'],
 };
 
-function getPalette(name) { return PALETTES[name] || PALETTES['Mondrian']; }
+function getPalette(name) {
+  if (Array.isArray(name)) return name;
+  return PALETTES[name] || PALETTES['Mondrian'];
+}
 function randomPalette() { const k=Object.keys(PALETTES); return k[Math.floor(Math.random()*k.length)]; }
 
 // ── Canvas Sizes ─────────────────────────────────────────────

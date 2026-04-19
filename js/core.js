@@ -190,6 +190,13 @@ function exportJPG(canvas, name) {
   a.click();
   toast('JPG exported');
 }
+function exportWebP(canvas, name) {
+  const a = document.createElement('a');
+  a.download = `genstudio-${name}-${Date.now()}.webp`;
+  a.href = canvas.toDataURL('image/webp', 0.93);
+  a.click();
+  toast('WebP exported');
+}
 function exportSVG(canvas, name) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}">
 <image href="${canvas.toDataURL()}" width="${canvas.width}" height="${canvas.height}"/>
@@ -215,6 +222,6 @@ return {
   hexToRgb, rgbToHex, hslToRgb, rgbToHsl, lerpHex, gradientAt,
   PALETTES, PALETTE_NAMES, getPalette, randPalette,
   SIZES, applyGrain,
-  exportPNG, exportJPG, exportSVG, toast
+  exportPNG, exportJPG, exportWebP, exportSVG, toast
 };
 })();

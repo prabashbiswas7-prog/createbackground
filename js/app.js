@@ -739,10 +739,7 @@ function init() {
 
 
   // Export Modal Logic
-  let pendingExportType = '';
-
-  function triggerExportModal(type) {
-      pendingExportType = type;
+  function triggerExportModal() {
       let downloads = parseInt(localStorage.getItem('genstudio_downloads') || '0');
       downloads++;
       localStorage.setItem('genstudio_downloads', downloads.toString());
@@ -755,28 +752,16 @@ function init() {
       }
   }
 
-  document.getElementById('btn-png')?.addEventListener('click', () => triggerExportModal('png'));
-  document.getElementById('btn-jpg')?.addEventListener('click', () => triggerExportModal('jpg'));
-  document.getElementById('btn-svg')?.addEventListener('click', () => triggerExportModal('svg'));
+  document.getElementById('btn-export')?.addEventListener('click', triggerExportModal);
 
   document.getElementById('confirm-download-btn')?.addEventListener('click', () => {
       document.getElementById('download-modal').style.display = 'none';
       const scale = parseInt(document.getElementById('export-quality').value || '1');
+      const format = document.getElementById('export-format').value || 'png';
 
       const p = JSON.parse(JSON.stringify(params[current])); // Deep clone
       p.w = (p.w || 1200) * scale;
       p.h = (p.h || 1200) * scale;
-
-      // Some parameters also need scaling to keep proportions (stroke width, margins, counts if density based)
-      // but a generic approach for a pixel canvas is to literally scale the context AND scale W, H.
-      // Actually, if we scale W and H, the tool will draw over a larger area.
-      // Let's just scale context and keep original W/H, or vice versa?
-      // Best approach for vanilla JS canvas: Keep original W, H in params (since some logic depends on it),
-      // Set canvas W, H to W*scale, H*scale.
-      // Then `ctx.scale(scale, scale)`. Then `tool.render(canvas, ctx, p)`.
-      // WAIT, `tool.render(C, cx, p)` often reads `C.width` to fill background.
-      // If `C.width` is `W*scale` and we scaled context, we'll draw way off screen!
-      // So we must pass a FAKE canvas object that returns the original W,H but has the real canvas context.
 
       const realCanvas = document.createElement('canvas');
       realCanvas.width = (p.w || 1200) * scale;
@@ -795,12 +780,10 @@ function init() {
           if (!TOOLS[current]) return;
           TOOLS[current].render(proxyCanvas, realCtx, p);
 
-          if (pendingExportType === 'png') GS.exportPNG(realCanvas, current);
-          if (pendingExportType === 'jpg') GS.exportJPG(realCanvas, current);
-          if (pendingExportType === 'svg') {
-             // SVG export uses toDataURL, so we can pass proxyCanvas or realCanvas. RealCanvas is fine.
-             GS.exportSVG(realCanvas, current);
-          }
+          if (format === 'png') GS.exportPNG(realCanvas, current);
+          if (format === 'jpg') GS.exportJPG(realCanvas, current);
+          if (format === 'webp') GS.exportWebP(realCanvas, current);
+          if (format === 'svg') GS.exportSVG(realCanvas, current);
       } catch (e) {
           console.error(e);
           GS.toast('Export Failed');

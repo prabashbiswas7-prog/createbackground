@@ -1,772 +1,776 @@
-// ── GenStudio Tool Renderers ─────────────────────────────────
-// Each tool: { name, icon, render(canvas, ctx, params) }
-
+// ═══════════════════════════════════════════════════════════════
+// GenStudio — 20 Tool Renderers
+// Each: { name, icon, render(canvas, ctx, p, img) }
+// ═══════════════════════════════════════════════════════════════
 const TOOLS = {};
 
-// ──────────────────────────────────────────────────────────────
-// 1. BLOCKS (Mondrian / Geometric grid)
-// ──────────────────────────────────────────────────────────────
+// ── 1. BLOCKS ────────────────────────────────────────────────
 TOOLS.blocks = {
   name: 'Blocks', icon: '⊞',
-  render(canvas, ctx, p) {
-    const {w,h}=[canvas.width,canvas.height];
-    const rng = GS.seededRandom(p.seed);
-    const palette = GS.getPalette(p.palette);
-    ctx.fillStyle = p.bg; ctx.fillRect(0,0,w,h);
-    const splits = [];
-    function splitRect(x,y,rw,rh,depth) {
-      if(depth<=0||rw<30||rh<30){splits.push({x,y,w:rw,h:rh});return;}
-      const horiz = p.type==='horizontal'?true:p.type==='vertical'?false:rng()<0.5;
-      const ratio = 0.25+rng()*0.5+(rng()-0.5)*p.asymmetry/200;
-      if(horiz) {
-        const cut=rh*ratio;
-        if(rng()<p.complexity/10){splitRect(x,y,rw,cut,depth-1);splitRect(x,y+cut,rw,rh-cut,depth-1);}
-        else splits.push({x,y,w:rw,h:rh});
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const rng = GS.seededRng(p.seed);
+    const pal = GS.getPalette(p.palette);
+    cx.fillStyle = p.bg; cx.fillRect(0, 0, W, H);
+
+    const rects = [];
+    function split(x, y, w, h, depth) {
+      if (depth <= 0 || w < 24 || h < 24) { rects.push([x,y,w,h]); return; }
+      const doH = p.type === 'Columns' ? false : p.type === 'Rows' ? true : rng() < 0.5;
+      const f = 0.25 + rng() * 0.5 + (rng() - 0.5) * (p.asymmetry / 200);
+      const prob = Math.min(0.95, p.complexity / 10);
+      if (rng() > prob) { rects.push([x,y,w,h]); return; }
+      if (doH) {
+        const cut = Math.max(12, Math.min(h - 12, h * f));
+        split(x, y, w, cut, depth - 1);
+        split(x, y + cut, w, h - cut, depth - 1);
       } else {
-        const cut=rw*ratio;
-        if(rng()<p.complexity/10){splitRect(x,y,cut,rh,depth-1);splitRect(x+cut,y,rw-cut,rh,depth-1);}
-        else splits.push({x,y,w:rw,h:rh});
+        const cut = Math.max(12, Math.min(w - 12, w * f));
+        split(x, y, cut, h, depth - 1);
+        split(x + cut, y, w - cut, h, depth - 1);
       }
     }
-    splitRect(0,0,w,h,Math.floor(p.count/2)+2);
-    splits.forEach(r=>{
-      const ci=Math.floor(rng()*palette.length);
-      const useColor=rng()*100<p.density;
-      ctx.fillStyle=useColor?palette[ci]:p.bg;
-      // wobble edges
-      if(p.wobble>0) {
-        ctx.beginPath();
-        const wob=p.wobble*0.3;
-        ctx.moveTo(r.x+wob*(rng()-0.5),r.y+wob*(rng()-0.5));
-        ctx.lineTo(r.x+r.w+wob*(rng()-0.5),r.y+wob*(rng()-0.5));
-        ctx.lineTo(r.x+r.w+wob*(rng()-0.5),r.y+r.h+wob*(rng()-0.5));
-        ctx.lineTo(r.x+wob*(rng()-0.5),r.y+r.h+wob*(rng()-0.5));
-        ctx.closePath(); ctx.fill();
+    split(0, 0, W, H, p.count);
+
+    rects.forEach(([rx, ry, rw, rh]) => {
+      const useCol = rng() * 100 < p.density;
+      cx.fillStyle = useCol ? pal[Math.floor(rng() * pal.length)] : p.bg;
+      if (p.wobble > 0) {
+        const wo = p.wobble * 0.25;
+        cx.beginPath();
+        cx.moveTo(rx + (rng()-0.5)*wo, ry + (rng()-0.5)*wo);
+        cx.lineTo(rx+rw + (rng()-0.5)*wo, ry + (rng()-0.5)*wo);
+        cx.lineTo(rx+rw + (rng()-0.5)*wo, ry+rh + (rng()-0.5)*wo);
+        cx.lineTo(rx + (rng()-0.5)*wo, ry+rh + (rng()-0.5)*wo);
+        cx.closePath(); cx.fill();
       } else {
-        ctx.fillRect(r.x,r.y,r.w,r.h);
+        cx.fillRect(rx, ry, rw, rh);
       }
-      if(p.stroke>0){
-        ctx.strokeStyle=p.lineColor; ctx.lineWidth=p.stroke;
-        ctx.strokeRect(r.x+p.stroke/2,r.y+p.stroke/2,r.w-p.stroke,r.h-p.stroke);
+      if (p.stroke > 0) {
+        cx.strokeStyle = p.lineColor;
+        cx.lineWidth = p.stroke;
+        cx.strokeRect(rx + p.stroke/2, ry + p.stroke/2, rw - p.stroke, rh - p.stroke);
       }
     });
-    // texture
-    if(p.texture>0) GS.applyGrain(ctx,w,h,p.texture*0.5);
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 2. GRADIENTS (Mesh / Noise gradient)
-// ──────────────────────────────────────────────────────────────
+// ── 2. GRADIENTS ─────────────────────────────────────────────
 TOOLS.gradients = {
   name: 'Gradients', icon: '◑',
-  render(canvas, ctx, p) {
-    const {width:w,height:h}=[canvas][0]; const W=canvas.width,H=canvas.height;
-    const id=ctx.createImageData(W,H);
-    const d=id.data;
-    const stops=p.stops||[[0,'#1a0533'],[0.5,'#7c5cfc'],[1,'#f5d0fe']];
-    const ns=p.noiseScale||2, ni=p.noiseIntensity/100||0.5;
-    const cd=p.curveDist/100||0.7, ang=(p.angle||45)*Math.PI/180;
-    for(let y=0;y<H;y++){
-      for(let x=0;x<W;x++){
-        let t=(x*Math.cos(ang)+y*Math.sin(ang))/(W*Math.cos(ang)+H*Math.sin(ang));
-        const n=GS.fbm(x/W*ns+p.seed/100,y/H*ns+p.seed/100,p.detail||2)*ni;
-        t=t+n*cd; t=Math.max(0,Math.min(1,t));
-        const hex=GS.colorAtGradient(stops,t);
-        const [r,g,b]=GS.hexToRgb(hex);
-        const i=(y*W+x)*4;
-        d[i]=r;d[i+1]=g;d[i+2]=b;d[i+3]=255;
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const stops = p.stops || [[0,'#1a0533'],[1,'#7c5cfc']];
+    const angle = (p.angle || 0) * Math.PI / 180;
+    const id = cx.createImageData(W, H);
+    const d = id.data;
+    const ns = p.noiseScale || 2;
+    const ni = (p.noiseIntensity || 55) / 100;
+    const cd = (p.curveDist || 70) / 100;
+    const seed = (p.seed || 0) * 0.01;
+
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        let t = (x/W * Math.cos(angle) + y/H * Math.sin(angle));
+        const n = GS.fbm(x/W*ns + seed, y/H*ns + seed, p.detail||2) * ni;
+        t = Math.max(0, Math.min(1, t + n * cd));
+        const hex = GS.gradientAt(stops, t);
+        const [r,g,b] = GS.hexToRgb(hex);
+        const i = (y * W + x) * 4;
+        d[i]=r; d[i+1]=g; d[i+2]=b; d[i+3]=255;
       }
     }
-    ctx.putImageData(id,0,0);
-    if(p.depth>0){
-      const gr=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.7);
-      gr.addColorStop(0,'rgba(255,255,255,'+p.highlights/300+')');
-      gr.addColorStop(1,'rgba(0,0,0,'+p.shadows/200+')');
-      ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
+    cx.putImageData(id, 0, 0);
+
+    if (p.depth > 0) {
+      const gr = cx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.7);
+      gr.addColorStop(0, `rgba(255,255,255,${p.highlights/300})`);
+      gr.addColorStop(1, `rgba(0,0,0,${p.shadows/200})`);
+      cx.fillStyle = gr; cx.fillRect(0, 0, W, H);
     }
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
-    // brightness/contrast/sat
-    if(p.brightness!==0||p.contrast!==100){
-      ctx.filter=`brightness(${(100+p.brightness)/100}) contrast(${p.contrast}%) saturate(${p.saturation}%)`;
-      const tmp=document.createElement('canvas'); tmp.width=W; tmp.height=H;
-      tmp.getContext('2d').drawImage(canvas,0,0);
-      ctx.drawImage(tmp,0,0);
-      ctx.filter='none';
-    }
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 3. LINES
-// ──────────────────────────────────────────────────────────────
+// ── 3. LINES ─────────────────────────────────────────────────
 TOOLS.lines = {
   name: 'Lines', icon: '≡',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const rng = GS.seededRng(p.seed || 0);
     // background
-    if(p.bgGradient) {
-      const gr=ctx.createLinearGradient(0,0,W,H);
-      gr.addColorStop(0,p.bg); gr.addColorStop(1,p.bg2||p.bg);
-      ctx.fillStyle=gr;
-    } else { ctx.fillStyle=p.bg; }
-    ctx.fillRect(0,0,W,H);
-    const rng=GS.seededRandom(p.seed||42);
-    const pad=p.padding; const count=p.count; const shape=p.shape;
-    const isH=shape==='Horizontal Lines'||shape==='Sine Waves'||shape==='Zigzag';
-    const isV=shape==='Vertical Lines';
-    const isCon=shape==='Concentric';
-    const isS=shape==='Spiral';
-    for(let i=0;i<count;i++){
-      const t=i/(count-1);
-      const freq=p.frequency*(1+(rng()-0.5)*p.freqVar);
-      const amp=p.amplitude*(1+(rng()-0.5)*0.3);
-      const opacity=1-(rng()*p.opacityVar/100);
-      const lw=p.thickness*(0.5+(1-(rng()*p.weightVar/100))*0.5);
-      ctx.globalAlpha=opacity;
-      // color
-      if(p.colorGradient) {
-        const stops=p.colorStops||[[0,p.lineColor],[1,p.lineColor2||p.lineColor]];
-        ctx.strokeStyle=GS.colorAtGradient(stops,t);
-      } else { ctx.strokeStyle=p.lineColor; }
-      ctx.lineWidth=lw;
-      ctx.beginPath();
-      if(isH||shape==='Sine Waves'||shape==='Zigzag') {
-        const y=pad+(H-pad*2)*t+(rng()-0.5)*p.spacingVar;
-        const rotJit=(rng()-0.5)*p.rotationJitter*Math.PI/180;
-        ctx.save(); ctx.translate(W/2,y); ctx.rotate(rotJit);
-        if(shape==='Horizontal Lines') { ctx.moveTo(-W/2,0); ctx.lineTo(W/2,0); }
-        else if(shape==='Sine Waves') {
-          ctx.moveTo(-W/2,0);
-          for(let x=-W/2;x<=W/2;x+=2){
-            const wobN=p.wobble>0?GS.noise2d(x*0.01,y*0.01)*p.wobble:0;
-            ctx.lineTo(x,Math.sin(x*freq+t*p.colorDrift)*amp+wobN);
-          }
-        } else if(shape==='Zigzag') {
-          ctx.moveTo(-W/2,0);
-          for(let x=-W/2;x<=W/2;x+=1/(freq*5)||10){
-            ctx.lineTo(x,((Math.round(x*freq)%2===0)?1:-1)*amp);
-          }
+    if (p.bgGradient) {
+      const gr = cx.createLinearGradient(0, 0, W, H);
+      gr.addColorStop(0, p.bg); gr.addColorStop(1, p.bg2 || p.bg);
+      cx.fillStyle = gr;
+    } else { cx.fillStyle = p.bg; }
+    cx.fillRect(0, 0, W, H);
+
+    const N = p.count;
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1 || 1);
+      const lw = p.thickness * (1 + (rng()-0.5)*(p.weightVar||0)/50);
+      const alpha = 1 - (rng()*(p.opacityVar||0)/100);
+      cx.globalAlpha = Math.max(0.05, alpha);
+      cx.lineWidth = Math.max(0.1, lw);
+      cx.strokeStyle = p.colorGradient
+        ? GS.gradientAt([[0,p.lineColor],[1,p.lineColor2||p.lineColor]], t)
+        : p.lineColor;
+
+      const pad = p.padding;
+      cx.beginPath();
+      const shape = p.shape;
+
+      if (shape === 'Horizontal Lines') {
+        const y = pad + (H - pad*2) * t;
+        cx.moveTo(pad, y); cx.lineTo(W-pad, y);
+      } else if (shape === 'Vertical Lines') {
+        const x = pad + (W - pad*2) * t;
+        cx.moveTo(x, pad); cx.lineTo(x, H-pad);
+      } else if (shape === 'Sine Waves') {
+        const y = pad + (H - pad*2) * t;
+        cx.moveTo(pad, y);
+        for (let x = pad; x <= W-pad; x += 2) {
+          const wob = p.wobble > 0 ? GS.noise2(x*0.01, y*0.01) * p.wobble : 0;
+          cx.lineTo(x, y + Math.sin(x * p.frequency + t*(p.colorDrift||0)*0.1) * p.amplitude + wob);
         }
-        ctx.restore();
-      } else if(isV) {
-        const x=pad+(W-pad*2)*t;
-        ctx.moveTo(x,pad); ctx.lineTo(x,H-pad);
-      } else if(isCon) {
-        const cx=W/2,cy=H/2;
-        const rx=(Math.min(W,H)/2-pad)*t;
-        ctx.ellipse(cx,cy,rx,rx*(H/W),0,0,Math.PI*2);
-      } else if(shape==='Diagonal') {
-        const x=pad+(W+H)*t-H;
-        ctx.moveTo(x,0); ctx.lineTo(x+H,H);
-      } else if(isS) {
-        const cx=W/2,cy=H/2,turns=8;
-        for(let a=0;a<turns*Math.PI*2*t+0.01;a+=0.05){
-          const r=a/(turns*Math.PI*2)*Math.min(W,H)/2;
-          const xp=cx+Math.cos(a)*r, yp=cy+Math.sin(a)*r;
-          a===0?ctx.moveTo(xp,yp):ctx.lineTo(xp,yp);
+      } else if (shape === 'Zigzag') {
+        const y = pad + (H - pad*2) * t;
+        cx.moveTo(pad, y);
+        const step = Math.max(2, 30 / (p.frequency * 100 + 0.1));
+        for (let x = pad; x <= W-pad; x += step) {
+          cx.lineTo(x, y + (Math.round((x-pad)/step) % 2 === 0 ? 1 : -1) * p.amplitude);
         }
-      } else if(shape==='Grid') {
-        if(i<count/2){const x=pad+(W-pad*2)*t*2;ctx.moveTo(x,pad);ctx.lineTo(x,H-pad);}
-        else{const y=pad+(H-pad*2)*(t*2-1);ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);}
-      } else if(shape==='Radial') {
-        const cx=W/2,cy=H/2,angle=t*Math.PI*2;
-        ctx.moveTo(cx,cy);
-        ctx.lineTo(cx+Math.cos(angle)*Math.max(W,H),cy+Math.sin(angle)*Math.max(W,H));
+      } else if (shape === 'Diagonal') {
+        const x = pad + (W+H)*t - H;
+        cx.moveTo(x, 0); cx.lineTo(x + H, H);
+      } else if (shape === 'Concentric') {
+        const r = ((H - pad*2) / 2) * t;
+        cx.arc(W/2, H/2, r, 0, Math.PI*2);
+      } else if (shape === 'Radial') {
+        const angle = t * Math.PI * 2;
+        cx.moveTo(W/2, H/2);
+        cx.lineTo(W/2 + Math.cos(angle)*W, H/2 + Math.sin(angle)*H);
+      } else if (shape === 'Spiral') {
+        const turns = 8;
+        for (let a = 0, first = true; a <= turns*Math.PI*2*t; a += 0.04) {
+          const r = a/(turns*Math.PI*2) * Math.min(W,H)/2;
+          const xp = W/2 + Math.cos(a)*r, yp = H/2 + Math.sin(a)*r;
+          first ? cx.moveTo(xp,yp) : cx.lineTo(xp,yp);
+          first = false;
+        }
+      } else if (shape === 'Grid') {
+        if (i < N/2) {
+          const x = pad + (W-pad*2)*(i/(N/2));
+          cx.moveTo(x, pad); cx.lineTo(x, H-pad);
+        } else {
+          const y = pad + (H-pad*2)*((i-N/2)/(N/2));
+          cx.moveTo(pad, y); cx.lineTo(W-pad, y);
+        }
       }
-      ctx.stroke();
+      cx.stroke();
     }
-    ctx.globalAlpha=1;
-    if(p.noise>0) GS.applyGrain(ctx,W,H,p.noise);
-    if(p.halftone>0) GS.applyHalftone(ctx,W,H,p.halftone,p.lineColor);
+    cx.globalAlpha = 1;
+    if (p.halftone > 0) {
+      // lightweight halftone pass
+      const id2 = cx.getImageData(0,0,W,H);
+      const tmp = document.createElement('canvas'); tmp.width=W; tmp.height=H;
+      const tc = tmp.getContext('2d');
+      tc.fillStyle = p.bg; tc.fillRect(0,0,W,H);
+      tc.fillStyle = p.lineColor;
+      const ds = Math.max(2, p.halftone);
+      for (let y2=0;y2<H;y2+=ds) for (let x2=0;x2<W;x2+=ds) {
+        const pi = (y2*W+x2)*4;
+        const br = (id2.data[pi]+id2.data[pi+1]+id2.data[pi+2])/(3*255);
+        const r2 = ds*(1-br)*0.5;
+        if (r2>0.4) { tc.beginPath(); tc.arc(x2+ds/2,y2+ds/2,r2,0,Math.PI*2); tc.fill(); }
+      }
+      cx.drawImage(tmp,0,0);
+    }
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 4. ORGANIC (Flow paths)
-// ──────────────────────────────────────────────────────────────
+// ── 4. ORGANIC ───────────────────────────────────────────────
 TOOLS.organic = {
   name: 'Organic', icon: '〜',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
-    const rng=GS.seededRandom(p.seed);
-    const stops=p.stops||[[0,'#7c5cfc'],[0.5,'#c084fc'],[1,'#f5d0fe']];
-    const pad=p.padding;
-    for(let pi=0;pi<p.pathCount;pi++){
-      const t=pi/p.pathCount;
-      const col=p.colorMode==='gradient'?GS.colorAtGradient(stops,t):stops[Math.floor(rng()*stops.length)][1];
-      ctx.strokeStyle=col;
-      ctx.lineWidth=p.lineWeight*(0.5+rng()*0.5);
-      ctx.globalAlpha=0.7+rng()*0.3;
-      ctx.beginPath();
-      const sx=pad+rng()*(W-pad*2), sy=pad+rng()*(H-pad*2);
-      ctx.moveTo(sx,sy);
-      let cx=sx,cy=sy;
-      const steps=80+Math.floor(rng()*40);
-      for(let s=0;s<steps;s++){
-        const angle=GS.noise2d(cx/W*p.frequency+p.seed/100,cy/H*p.frequency+p.seed/100)*Math.PI*2*p.harmonics;
-        const wobble=(rng()-0.5)*p.wobble;
-        const step=p.amplitude/steps*3;
-        cx=Math.max(pad,Math.min(W-pad,cx+Math.cos(angle+wobble)*step));
-        cy=Math.max(pad,Math.min(H-pad,cy+Math.sin(angle+wobble)*step));
-        if(p.roughness>0&&s%3===0){
-          const rx=(rng()-0.5)*p.roughness,ry=(rng()-0.5)*p.roughness;
-          ctx.bezierCurveTo(cx+rx,cy+ry,cx-rx,cy-ry,cx,cy);
-        } else { ctx.lineTo(cx,cy); }
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const rng = GS.seededRng(p.seed);
+    cx.fillStyle = p.bg; cx.fillRect(0, 0, W, H);
+    const stops = p.stops || [[0,'#00ff41'],[1,'#003a0f']];
+
+    for (let pi2 = 0; pi2 < p.pathCount; pi2++) {
+      const t = pi2 / p.pathCount;
+      const col = p.colorMode === 'gradient' ? GS.gradientAt(stops, t)
+        : GS.getPalette(p.palette||'Terminal')[Math.floor(rng()*5)];
+      cx.strokeStyle = col;
+      cx.lineWidth = p.lineWeight * (0.4 + rng() * 0.6);
+      cx.globalAlpha = 0.6 + rng() * 0.4;
+      cx.beginPath();
+
+      let px = rng() * W, py = rng() * H;
+      cx.moveTo(px, py);
+      const steps = 60 + Math.floor(rng() * 40);
+      for (let s = 0; s < steps; s++) {
+        const ang = GS.fbm(px/W*p.frequency + p.seed/100, py/H*p.frequency + p.seed/100, 3) * Math.PI * 2 * p.harmonics;
+        const wob = (rng()-0.5) * p.wobble * 0.5;
+        const sp = (p.amplitude / steps) * 3;
+        const nx = px + Math.cos(ang + wob) * sp;
+        const ny = py + Math.sin(ang + wob) * sp;
+        if (p.roughness > 0) {
+          cx.bezierCurveTo(
+            px+(rng()-0.5)*p.roughness, py+(rng()-0.5)*p.roughness,
+            nx+(rng()-0.5)*p.roughness, ny+(rng()-0.5)*p.roughness,
+            nx, ny
+          );
+        } else { cx.lineTo(nx, ny); }
+        px = Math.max(0, Math.min(W, nx));
+        py = Math.max(0, Math.min(H, ny));
       }
-      if(p.pathType==='Filled'){ctx.closePath();ctx.fillStyle=col;ctx.fill();}
-      else ctx.stroke();
+      if (p.pathType === 'Filled') { cx.closePath(); cx.fillStyle = col; cx.fill(); }
+      else cx.stroke();
     }
-    ctx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    cx.globalAlpha = 1;
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 5. PLOTTER (Dot/Shape grids)
-// ──────────────────────────────────────────────────────────────
+// ── 5. PLOTTER ────────────────────────────────────────────────
 TOOLS.plotter = {
   name: 'Plotter', icon: '⁙',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
-    const rng=GS.seededRandom(p.seed);
-    const palette=GS.getPalette(p.palette);
-    const mx=p.margin,cols=p.columns,rows=p.rows;
-    const cw=(W-mx*2)/cols, ch=(H-mx*2)/rows;
-    for(let r=0;r<rows;r++){
-      for(let c=0;c<cols;c++){
-        const t=(r*cols+c)/(rows*cols);
-        const n=GS.noise2d(c*p.noiseScale+p.seed,r*p.noiseScale+p.seed)*p.noiseIntensity;
-        const jx=(rng()-0.5)*cw*p.jitter, jy=(rng()-0.5)*ch*p.jitter;
-        const cx=mx+c*cw+cw/2+jx, cy=mx+r*ch+ch/2+jy;
-        const size=p.minSize+(p.maxSize-p.minSize)*((n+1)/2);
-        const col=palette[Math.floor(rng()*palette.length)];
-        ctx.strokeStyle=col; ctx.fillStyle=col;
-        ctx.lineWidth=p.strokeWeight;
-        const rot=(p.rotation+rng()*p.wobble)*Math.PI/180;
-        ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot);
-        ctx.beginPath();
-        switch(p.shape){
-          case 'Circle':ctx.arc(0,0,size/2,0,Math.PI*2);break;
-          case 'Square':ctx.rect(-size/2,-size/2,size,size);break;
-          case 'Triangle':
-            ctx.moveTo(0,-size/2);ctx.lineTo(size/2,size/2);ctx.lineTo(-size/2,size/2);ctx.closePath();break;
-          case 'Line':ctx.moveTo(-size/2,0);ctx.lineTo(size/2,0);break;
-          case 'Cross':
-            ctx.moveTo(-size/2,0);ctx.lineTo(size/2,0);
-            ctx.moveTo(0,-size/2);ctx.lineTo(0,size/2);break;
-          case 'Diamond':
-            ctx.moveTo(0,-size/2);ctx.lineTo(size/2,0);ctx.lineTo(0,size/2);ctx.lineTo(-size/2,0);ctx.closePath();break;
-          case 'Hexagon':
-            for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.lineTo(Math.cos(a)*size/2,Math.sin(a)*size/2);}ctx.closePath();break;
-          default:ctx.arc(0,0,size/2,0,Math.PI*2);
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const rng = GS.seededRng(p.seed);
+    const pal = GS.getPalette(p.palette);
+    cx.fillStyle = p.bg; cx.fillRect(0, 0, W, H);
+    const mx = p.margin || 40;
+    const cols = p.columns, rows = p.rows;
+    const cw = (W - mx*2) / cols, ch = (H - mx*2) / rows;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const n = (GS.noise2(c * (p.noiseScale||0.02) + p.seed, r * (p.noiseScale||0.02) + p.seed) + 1) / 2;
+        const jx = (rng()-0.5) * cw * p.jitter;
+        const jy = (rng()-0.5) * ch * p.jitter;
+        const pcx = mx + c*cw + cw/2 + jx;
+        const pcy = mx + r*ch + ch/2 + jy;
+        const size = p.minSize + (p.maxSize - p.minSize) * n * (p.noiseIntensity||1);
+        const col = pal[Math.floor(rng() * pal.length)];
+        cx.strokeStyle = col; cx.fillStyle = col;
+        cx.lineWidth = p.strokeWeight;
+        const rot = (p.rotation + (rng()-0.5)*p.wobble) * Math.PI/180;
+        cx.save(); cx.translate(pcx, pcy); cx.rotate(rot);
+        cx.beginPath();
+        const s = p.shape;
+        if (s==='Circle') cx.arc(0,0,size/2,0,Math.PI*2);
+        else if (s==='Square') cx.rect(-size/2,-size/2,size,size);
+        else if (s==='Triangle') { cx.moveTo(0,-size/2); cx.lineTo(size/2,size/2); cx.lineTo(-size/2,size/2); cx.closePath(); }
+        else if (s==='Line') { cx.moveTo(-size/2,0); cx.lineTo(size/2,0); }
+        else if (s==='Cross') { cx.moveTo(-size/2,0); cx.lineTo(size/2,0); cx.moveTo(0,-size/2); cx.lineTo(0,size/2); }
+        else if (s==='Diamond') { cx.moveTo(0,-size/2); cx.lineTo(size/2,0); cx.lineTo(0,size/2); cx.lineTo(-size/2,0); cx.closePath(); }
+        else if (s==='Hexagon') {
+          for (let i=0;i<6;i++) { const a=i*Math.PI/3-Math.PI/6; cx.lineTo(Math.cos(a)*size/2,Math.sin(a)*size/2); }
+          cx.closePath();
         }
-        p.filled?ctx.fill():ctx.stroke();
-        ctx.restore();
+        else cx.arc(0,0,size/2,0,Math.PI*2);
+        p.filled ? cx.fill() : cx.stroke();
+        cx.restore();
       }
     }
-    if(p.amount>0) GS.applyGrain(ctx,W,H,p.amount);
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 6. TOPO (Topographic / contour)
-// ──────────────────────────────────────────────────────────────
+// ── 6. TOPO ───────────────────────────────────────────────────
 TOOLS.topo = {
   name: 'Topo', icon: '◎',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
-    const mx=p.margin;
-    const palette=p.mode==='Gradient'?null:null;
-    const stops=p.stops||[[0,p.lineColor]];
-    for(let level=0;level<p.levels;level++){
-      const t=level/p.levels;
-      const iso=t*2-1;
-      ctx.strokeStyle=p.mode==='Gradient'?GS.colorAtGradient([[0,p.bg],[1,p.lineColor]],t):p.lineColor;
-      ctx.lineWidth=p.strokeWeight;
-      ctx.globalAlpha=p.opacity/100;
-      ctx.beginPath();
-      let first=true;
-      const samples=200;
-      for(let xi=0;xi<=samples;xi++){
-        const x=mx+(W-mx*2)*xi/samples;
-        const fx=xi/samples*p.noiseScale*W/100;
-        for(let yi=0;yi<=samples;yi++){
-          const y=mx+(H-mx*2)*yi/samples;
-          const fy=yi/samples*p.noiseScale*H/100;
-          const v=GS.fbm(fx+p.seed/100,fy+p.seed/100,p.octaves)*p.falloff*2;
-          // March adjacent squares — simplified: just draw where noise ≈ iso
-          const nx=GS.fbm(fx+0.01+p.seed/100,fy+p.seed/100,p.octaves)*p.falloff*2;
-          if((v-iso)*(nx-iso)<0){
-            first?ctx.moveTo(x,y):ctx.lineTo(x,y);
-            first=false;
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    cx.fillStyle = p.bg; cx.fillRect(0, 0, W, H);
+    cx.lineWidth = p.strokeWeight;
+    const mx = p.margin;
+
+    for (let lv = 0; lv < p.levels; lv++) {
+      const t = lv / p.levels;
+      const iso = t * 2 - 1;
+      if (p.mode === 'Gradient') {
+        cx.strokeStyle = GS.gradientAt([[0,p.bg],[1,p.lineColor]], t);
+      } else if (p.mode === 'Rainbow') {
+        const [r,g,b] = GS.hslToRgb(t*360, 80, 60);
+        cx.strokeStyle = GS.rgbToHex(r,g,b);
+      } else {
+        cx.strokeStyle = p.lineColor;
+      }
+      cx.globalAlpha = (p.opacity||100)/100;
+
+      // marching squares (simplified edge scan)
+      const res = 160;
+      const xs = (W - mx*2) / res, ys = (H - mx*2) / res;
+      cx.beginPath();
+      for (let xi = 0; xi < res; xi++) {
+        for (let yi = 0; yi < res; yi++) {
+          const x0 = mx + xi*xs, y0 = mx + yi*ys;
+          const x1 = x0+xs, y1 = y0+ys;
+          const fx = xi/res * (p.noiseScale||0.008) * W;
+          const fy = yi/res * (p.noiseScale||0.008) * H;
+          const v00 = GS.fbm(fx+p.seed/100, fy+p.seed/100, p.octaves||4);
+          const v10 = GS.fbm(fx+xs/(W/(res*(p.noiseScale||0.008)*W))+p.seed/100, fy+p.seed/100, p.octaves||4);
+          const v01 = GS.fbm(fx+p.seed/100, fy+ys/(H/(res*(p.noiseScale||0.008)*H))+p.seed/100, p.octaves||4);
+
+          if ((v00 - iso) * (v10 - iso) < 0) {
+            const tx = x0 + xs*(iso-v00)/(v10-v00+0.0001);
+            cx.moveTo(tx, y0); cx.lineTo(tx, y0+ys*0.5);
+          }
+          if ((v00 - iso) * (v01 - iso) < 0) {
+            const ty = y0 + ys*(iso-v00)/(v01-v00+0.0001);
+            cx.moveTo(x0, ty); cx.lineTo(x0+xs*0.5, ty);
           }
         }
       }
-      ctx.stroke();
+      cx.stroke();
     }
-    ctx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    cx.globalAlpha = 1;
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 7. MARBLE
-// ──────────────────────────────────────────────────────────────
+// ── 7. MARBLE ─────────────────────────────────────────────────
 TOOLS.marble = {
   name: 'Marble', icon: '◉',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    const id=ctx.createImageData(W,H);
-    const d=id.data;
-    const cols={main:GS.hexToRgb(p.main||'#f0ece0'),low:GS.hexToRgb(p.low||'#c8bfab'),
-      mid:GS.hexToRgb(p.mid||'#9b8e7a'),high:GS.hexToRgb(p.high||'#fff9f0')};
-    for(let y=0;y<H;y++){
-      for(let x=0;x<W;x++){
-        const fx=x/W*p.noiseScale, fy=y/H*p.noiseScale;
-        let warp=0;
-        for(let oct=0;oct<4;oct++){
-          warp+=GS.noise2d(fx*(oct+1)+p.seed/100+p.wind,fy*(oct+1)+p.seed/100)*p.warp/(oct+1);
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const id = cx.createImageData(W, H); const d = id.data;
+    const main = GS.hexToRgb(p.main || '#f0ece0');
+    const low  = GS.hexToRgb(p.low  || '#c8bfab');
+    const mid  = GS.hexToRgb(p.mid  || '#9b8e7a');
+    const high = GS.hexToRgb(p.high || '#fff9f0');
+    const ns = p.noiseScale || 1;
+    const seed = (p.seed||0) * 0.01;
+
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const fx = x/W * ns, fy = y/H * ns;
+        let warp = 0;
+        for (let oct = 0; oct < 3; oct++) {
+          warp += GS.noise2(fx*(oct+1)+seed+p.wind*0.1, fy*(oct+1)+seed) * (p.warp||0) / (oct+1);
         }
-        const v=(Math.sin((x/W+warp)*Math.PI*p.strength)+1)/2;
-        const fbv=GS.fbm(fx+warp*p.fbmStrength+p.seed/100,fy+warp*p.fbmDamping+p.seed/100,4);
-        const t=Math.max(0,Math.min(1,(v+fbv)*0.5));
-        const c=t<0.33?
-          [cols.low[0]+t*3*(cols.mid[0]-cols.low[0]),cols.low[1]+t*3*(cols.mid[1]-cols.low[1]),cols.low[2]+t*3*(cols.mid[2]-cols.low[2])]:
-          t<0.66?
-          [cols.mid[0]+(t-0.33)*3*(cols.main[0]-cols.mid[0]),cols.mid[1]+(t-0.33)*3*(cols.main[1]-cols.mid[1]),cols.mid[2]+(t-0.33)*3*(cols.main[2]-cols.mid[2])]:
-          [cols.main[0]+(t-0.66)*3*(cols.high[0]-cols.main[0]),cols.main[1]+(t-0.66)*3*(cols.high[1]-cols.main[1]),cols.main[2]+(t-0.66)*3*(cols.high[2]-cols.main[2])];
-        const i=(y*W+x)*4;
-        d[i]=Math.max(0,Math.min(255,c[0])); d[i+1]=Math.max(0,Math.min(255,c[1])); d[i+2]=Math.max(0,Math.min(255,c[2])); d[i+3]=255;
+        const v = (Math.sin((x/W + warp) * Math.PI * (p.strength||1) * 5) + 1) / 2;
+        const fbv = (GS.fbm(fx + warp*(p.fbmStrength||1) + seed, fy + warp*(p.fbmDamping||1) + seed, 4) + 1) / 2;
+        let t = Math.max(0, Math.min(1, (v*0.6 + fbv*0.4)));
+        const cols = t < 0.33 ? [low,mid] : t < 0.66 ? [mid,main] : [main,high];
+        const lt = t < 0.33 ? t*3 : t < 0.66 ? (t-0.33)*3 : (t-0.66)*3;
+        const c = [0,1,2].map(j => cols[0][j] + lt*(cols[1][j]-cols[0][j]));
+        const i = (y*W+x)*4;
+        d[i]=Math.round(c[0]); d[i+1]=Math.round(c[1]); d[i+2]=Math.round(c[2]); d[i+3]=255;
       }
     }
-    ctx.putImageData(id,0,0);
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    cx.putImageData(id, 0, 0);
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 8. ASCII
-// ──────────────────────────────────────────────────────────────
+// ── 8. ASCII ──────────────────────────────────────────────────
 TOOLS.ascii = {
   name: 'ASCII', icon: 'Aa',
-  render(canvas, ctx, p, imageData) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg||'#000000'; ctx.fillRect(0,0,W,H);
-    ctx.font=`${p.fontSize}px ${p.font||'JetBrains Mono, monospace'}`;
-    ctx.textBaseline='top';
-    const charSets={
-      Standard:' .:-=+*#%@',
-      Dense:' .\':;lIi!,|)(}{][?JjrftFnuvXUYCQO0Zmwqpdbkhao*#MW&8%B@$',
-      Blocks:' ░▒▓█',
-      Binary:' 01',
-      Braille:' ⠂⠃⠆⠇⠸⠹⠺⠻⠼⠽⠾⠿',
-      Emoji:' .oO0@#',
+  render(C, cx, p, img) {
+    const W = C.width, H = C.height;
+    cx.fillStyle = p.bg || '#000000'; cx.fillRect(0, 0, W, H);
+    const SETS = {
+      Standard: ' .:-=+*#%@',
+      Dense:    ' .\'`:;!i1|l(){}[?JrftFnuvXUYCQO0Zmwqpdbkhao*#MW&8%B@$',
+      Blocks:   ' ░▒▓█',
+      Binary:   ' 01',
+      Braille:  ' ⠂⠆⠇⠸⠹⠺⠻⠼⠽⠾⠿',
     };
-    const chars=charSets[p.charSet]||charSets.Standard;
-    if(!imageData){
-      // pattern-based ASCII
-      for(let y=0;y<H;y+=p.fontSize*p.lineHeight){
-        for(let x=0;x<W;x+=p.fontSize*p.letterSpacing||p.fontSize){
-          const n=(GS.noise2d(x/W*5+p.seed/100,y/H*5+p.seed/100)+1)/2;
-          const ci=Math.floor(n*chars.length);
-          ctx.fillStyle=p.color||'#ffffff';
-          ctx.fillText(chars[ci]||' ',x,y);
+    const chars = SETS[p.charSet] || SETS.Standard;
+    const fs = Math.max(4, p.fontSize || 8);
+    const ls = p.lineHeight || 1;
+    cx.font = `${fs}px "IBM Plex Mono", monospace`;
+    cx.textBaseline = 'top';
+
+    if (img) {
+      const tmp = document.createElement('canvas'); tmp.width=W; tmp.height=H;
+      const tc = tmp.getContext('2d'); tc.drawImage(img, 0, 0, W, H);
+      const id2 = tc.getImageData(0, 0, W, H);
+      for (let y = 0; y < H; y += fs * ls) {
+        for (let x = 0; x < W; x += fs * 0.6) {
+          const pi = (Math.floor(y)*W + Math.floor(x)) * 4;
+          const r=id2.data[pi], g=id2.data[pi+1], b=id2.data[pi+2];
+          let br = (r*0.299+g*0.587+b*0.114)/255;
+          br = Math.max(0,Math.min(1,(br-0.5)*(p.contrast||100)/100+0.5+(p.brightness||0)/200));
+          if (p.invert) br = 1 - br;
+          const ci = Math.floor(br * (chars.length-1));
+          cx.fillStyle = p.matchColors ? `rgb(${r},${g},${b})` : (p.color||'#ffffff');
+          cx.fillText(chars[ci] || ' ', x, y);
         }
       }
     } else {
-      // image-based
-      const tmp=document.createElement('canvas');
-      tmp.width=W; tmp.height=H;
-      const tc=tmp.getContext('2d');
-      tc.drawImage(imageData,0,0,W,H);
-      const id=tc.getImageData(0,0,W,H);
-      for(let y=0;y<H;y+=p.fontSize*p.lineHeight){
-        for(let x=0;x<W;x+=p.fontSize){
-          const i=((Math.floor(y)*W)+Math.floor(x))*4;
-          const r=id.data[i],g=id.data[i+1],b=id.data[i+2];
-          const bright=(r*0.299+g*0.587+b*0.114)/255;
-          const adjusted=Math.max(0,Math.min(1,(bright-0.5)*p.contrast/100+0.5+p.brightness/200));
-          const ci=Math.floor(adjusted*(chars.length-1));
-          if(p.matchColors){ctx.fillStyle=`rgb(${r},${g},${b})`;}
-          else{ctx.fillStyle=p.color||'#ffffff';}
-          if(p.invert){ctx.fillStyle=ctx.fillStyle==='#ffffff'?'#000000':ctx.fillStyle;}
-          ctx.fillText(chars[ci]||' ',x,y);
+      // pattern mode
+      const rng = GS.seededRng(p.seed||0);
+      for (let y = 0; y < H; y += fs * ls) {
+        for (let x = 0; x < W; x += fs * 0.6) {
+          const n = (GS.noise2(x/W*5 + (p.seed||0)/100, y/H*5 + (p.seed||0)/100) + 1)/2;
+          const ci = Math.floor(n * chars.length);
+          cx.fillStyle = p.color || '#00ff41';
+          cx.fillText(chars[ci] || ' ', x, y);
         }
       }
     }
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 9. DITHER
-// ──────────────────────────────────────────────────────────────
+// ── 9. DITHER ─────────────────────────────────────────────────
 TOOLS.dither = {
   name: 'Dither', icon: '⣿',
-  render(canvas, ctx, p, src) {
-    const W=canvas.width,H=canvas.height;
-    const palette=GS.getPalette(p.palette);
-    if(!src){
-      // gradient source
-      const tmpC=document.createElement('canvas'); tmpC.width=W; tmpC.height=H;
-      const tc=tmpC.getContext('2d');
-      const gr=tc.createLinearGradient(0,0,W,H);
-      gr.addColorStop(0,palette[0]); gr.addColorStop(1,palette[palette.length-1]);
-      tc.fillStyle=gr; tc.fillRect(0,0,W,H);
-      // add noise
-      if(p.type==='Noise'){
-        const id2=tc.getImageData(0,0,W,H);
-        for(let y=0;y<H;y++) for(let x=0;x<W;x++){
-          const n=(GS.noise2d(x/W*4,y/H*4)+1)/2;
+  render(C, cx, p, src) {
+    const W = C.width, H = C.height;
+    const pal = GS.getPalette(p.palette);
+    // Build source
+    const tmp = document.createElement('canvas'); tmp.width=W; tmp.height=H;
+    const tc = tmp.getContext('2d');
+    if (src) {
+      tc.drawImage(src, 0, 0, W, H);
+    } else {
+      const gr = tc.createLinearGradient(0,0,W,H);
+      pal.forEach((c,i,a) => gr.addColorStop(i/(a.length-1), c));
+      tc.fillStyle = gr; tc.fillRect(0,0,W,H);
+      if (p.sourceType === 'Noise') {
+        const id2 = tc.getImageData(0,0,W,H);
+        for (let y=0;y<H;y++) for (let x=0;x<W;x++) {
+          const n = (GS.noise2(x/W*4+p.seed/100, y/H*4+p.seed/100)+1)/2;
           const i=(y*W+x)*4;
-          id2.data[i]=id2.data[i]*n; id2.data[i+1]=id2.data[i+1]*n; id2.data[i+2]=id2.data[i+2]*n;
+          id2.data[i] *= n; id2.data[i+1] *= n; id2.data[i+2] *= n;
         }
         tc.putImageData(id2,0,0);
       }
-      src=tmpC;
     }
-    const tmpC2=document.createElement('canvas'); tmpC2.width=W; tmpC2.height=H;
-    const tc2=tmpC2.getContext('2d'); tc2.drawImage(src,0,0,W,H);
-    const id=tc2.getImageData(0,0,W,H); const data=[...id.data];
+    const srcData = tc.getImageData(0,0,W,H);
+
     // Bayer matrices
-    const bayer4=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]].map(r=>r.map(v=>v/16));
-    const bayer8=Array.from({length:8},(_,r)=>Array.from({length:8},(_,c)=>{
-      const b=bayer4[r%4][c%4];return r<4?b/2:(b+0.5)/2;
+    const B4=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]].map(r=>r.map(v=>v/16));
+    const B8 = Array.from({length:8},(_,r)=>Array.from({length:8},(_,c)=>{
+      const b4val=B4[r%4][c%4]; return r<4?b4val/2:(b4val+0.5)/2;
     }));
-    const matrix=p.pattern==='Bayer 8x8'?bayer8:bayer4;
-    const msize=matrix.length;
-    function nearest(r,g,b){
-      let best=palette[0],bd=Infinity;
-      for(const col of palette){const [pr,pg,pb]=GS.hexToRgb(col);const d=(r-pr)**2+(g-pg)**2+(b-pb)**2;if(d<bd){bd=d;best=col;}}
+    const mat = p.pattern==='Bayer 8x8' ? B8 : B4;
+    const ms = mat.length;
+
+    function nearest(r,g,b) {
+      let best=pal[0], bd=Infinity;
+      for (const col of pal) {
+        const [pr,pg,pb]=GS.hexToRgb(col);
+        const dist=(r-pr)**2+(g-pg)**2+(b-pb)**2;
+        if (dist<bd) { bd=dist; best=col; }
+      }
       return GS.hexToRgb(best);
     }
-    const cs=Math.max(1,p.cellSize||2);
-    ctx.clearRect(0,0,W,H);
-    ctx.fillStyle=palette[0]; ctx.fillRect(0,0,W,H);
-    for(let y=0;y<H;y+=cs){
-      for(let x=0;x<W;x+=cs){
+
+    cx.clearRect(0,0,W,H);
+    cx.fillStyle=pal[0]; cx.fillRect(0,0,W,H);
+    const cs = Math.max(1, p.cellSize||2);
+
+    for (let y=0;y<H;y+=cs) {
+      for (let x=0;x<W;x+=cs) {
         const i=(y*W+x)*4;
-        const r=id.data[i]/255, g=id.data[i+1]/255, b=id.data[i+2]/255;
-        const th=matrix[Math.floor(y/cs)%msize][Math.floor(x/cs)%msize];
+        const r=srcData.data[i]/255, g=srcData.data[i+1]/255, b=srcData.data[i+2]/255;
+        const th=mat[Math.floor(y/cs)%ms][Math.floor(x/cs)%ms];
         const [nr,ng,nb]=nearest(
           Math.min(255,(r+th*0.5)*255),
           Math.min(255,(g+th*0.5)*255),
           Math.min(255,(b+th*0.5)*255)
         );
-        ctx.fillStyle=`rgb(${nr},${ng},${nb})`;
-        if(p.shape==='Circle'){ctx.beginPath();ctx.arc(x+cs/2,y+cs/2,cs/2,0,Math.PI*2);ctx.fill();}
-        else ctx.fillRect(x,y,cs,cs);
+        cx.fillStyle=`rgb(${nr},${ng},${nb})`;
+        if (p.shape==='Circle') {
+          cx.beginPath(); cx.arc(x+cs/2,y+cs/2,cs/2,0,Math.PI*2); cx.fill();
+        } else if (p.shape==='Diamond') {
+          cx.beginPath(); cx.moveTo(x+cs/2,y); cx.lineTo(x+cs,y+cs/2);
+          cx.lineTo(x+cs/2,y+cs); cx.lineTo(x,y+cs/2); cx.closePath(); cx.fill();
+        } else {
+          cx.fillRect(x,y,cs,cs);
+        }
       }
     }
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 10. NOISE TEXTURE
-// ──────────────────────────────────────────────────────────────
+// ── 10. NOISE ─────────────────────────────────────────────────
 TOOLS.noise = {
   name: 'Noise', icon: '▓',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    const id=ctx.createImageData(W,H); const d=id.data;
-    const stops=p.stops||[[0,p.c1||'#0a0a0f'],[1,p.c2||'#7c5cfc']];
-    for(let y=0;y<H;y++){
-      for(let x=0;x<W;x++){
-        let n=GS.fbm(x/W*p.scale+p.seed/100,y/H*p.scale+p.seed/100,p.octaves);
-        n=(n+1)/2;
-        // domain warp
-        if(p.warp>0){
-          const wx=GS.fbm(x/W*p.scale+p.seed/100+3.2,y/H*p.scale+p.seed/100+1.7,2)*p.warp;
-          const wy=GS.fbm(x/W*p.scale+p.seed/100+1.9,y/H*p.scale+p.seed/100+4.1,2)*p.warp;
-          n=GS.fbm((x/W+wx)*p.scale+p.seed/100,(y/H+wy)*p.scale+p.seed/100,p.octaves);
-          n=(n+1)/2;
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const id = cx.createImageData(W, H); const d = id.data;
+    const stops = p.stops || [[0, p.c1||'#050505'],[1, p.c2||'#00ff41']];
+    const seed = (p.seed||0) * 0.01;
+
+    for (let y=0;y<H;y++) {
+      for (let x=0;x<W;x++) {
+        let nx = x/W*(p.scale||4)+seed, ny = y/H*(p.scale||4)+seed;
+        if (p.warp > 0) {
+          const wx = GS.fbm(nx+3.2, ny+1.7, 2) * p.warp;
+          const wy = GS.fbm(nx+1.9, ny+4.1, 2) * p.warp;
+          nx += wx; ny += wy;
         }
-        n=Math.max(0,Math.min(1,n));
-        if(p.ridged) n=1-Math.abs(n*2-1);
-        if(p.terraced) n=Math.round(n*p.terraces)/p.terraces;
-        const hex=GS.colorAtGradient(stops,n);
-        const [r,g,b]=GS.hexToRgb(hex);
-        const i=(y*W+x)*4;
-        d[i]=r;d[i+1]=g;d[i+2]=b;d[i+3]=255;
+        let n = (GS.fbm(nx, ny, p.octaves||4) + 1) / 2;
+        n = Math.max(0, Math.min(1, n));
+        if (p.ridged) n = 1 - Math.abs(n*2-1);
+        if (p.terraced && p.terraces > 0) n = Math.round(n*p.terraces)/p.terraces;
+        const hex = GS.gradientAt(stops, n);
+        const [r,g,b] = GS.hexToRgb(hex);
+        const i=(y*W+x)*4; d[i]=r; d[i+1]=g; d[i+2]=b; d[i+3]=255;
       }
     }
-    ctx.putImageData(id,0,0);
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    cx.putImageData(id, 0, 0);
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 11. CIRCLES (Concentric / bubble layouts)
-// ──────────────────────────────────────────────────────────────
+// ── 11. CIRCLES ───────────────────────────────────────────────
 TOOLS.circles = {
   name: 'Circles', icon: '○',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
-    const rng=GS.seededRandom(p.seed);
-    const palette=GS.getPalette(p.palette);
-    if(p.type==='Concentric'){
-      const cx=W*p.cx/100, cy=H*p.cy/100;
-      for(let i=p.count;i>0;i--){
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const rng = GS.seededRng(p.seed);
+    const pal = GS.getPalette(p.palette);
+    cx.fillStyle = p.bg; cx.fillRect(0,0,W,H);
+
+    if (p.type === 'Concentric') {
+      const pcx2=W*(p.cx||50)/100, pcy2=H*(p.cy||50)/100;
+      for (let i=p.count;i>0;i--) {
         const t=i/p.count;
-        const r=t*Math.min(W,H)*0.5;
-        ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-        ctx.strokeStyle=palette[i%palette.length];
-        ctx.lineWidth=p.stroke; ctx.globalAlpha=0.5+t*0.5;
-        p.filled?ctx.fill():ctx.stroke();
+        cx.beginPath(); cx.arc(pcx2,pcy2,t*Math.min(W,H)*0.48,0,Math.PI*2);
+        cx.strokeStyle=pal[i%pal.length]; cx.lineWidth=p.stroke;
+        cx.globalAlpha=0.4+t*0.6;
+        p.filled?cx.fill():cx.stroke();
       }
-    } else if(p.type==='Random Bubble') {
-      const circles=[];
-      for(let i=0;i<p.count*5;i++){
+    } else if (p.type === 'Random Bubble') {
+      const placed=[];
+      for (let i=0;i<p.count*6;i++) {
         const r=p.minR+rng()*(p.maxR-p.minR);
         const x=r+rng()*(W-r*2), y=r+rng()*(H-r*2);
-        if(p.pack){
-          if(circles.some(c=>Math.hypot(c.x-x,c.y-y)<c.r+r+2))continue;
-        }
-        circles.push({x,y,r,col:palette[Math.floor(rng()*palette.length)]});
-        if(circles.length>=p.count)break;
+        if (p.pack && placed.some(c=>Math.hypot(c.x-x,c.y-y)<c.r+r+2)) continue;
+        placed.push({x,y,r,col:pal[Math.floor(rng()*pal.length)]});
+        if (placed.length>=p.count) break;
       }
-      circles.forEach(c=>{
-        ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2);
-        ctx.fillStyle=c.col; ctx.strokeStyle=p.lineColor; ctx.lineWidth=p.stroke;
-        if(p.filled)ctx.fill(); ctx.stroke();
+      placed.forEach(c=>{
+        cx.beginPath(); cx.arc(c.x,c.y,c.r,0,Math.PI*2);
+        cx.fillStyle=c.col; cx.strokeStyle=p.lineColor; cx.lineWidth=p.stroke;
+        if(p.filled)cx.fill(); cx.stroke();
       });
-    } else if(p.type==='Grid') {
-      const cols=p.cols||8, rows=p.rows||8;
-      const cw=W/cols, ch=H/rows;
-      for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
-        const t=(r*cols+c)/(rows*cols);
-        const n=GS.noise2d(c*0.3+p.seed,r*0.3+p.seed);
-        const radius=(p.minR+(p.maxR-p.minR)*((n+1)/2));
-        ctx.beginPath(); ctx.arc(c*cw+cw/2,r*ch+ch/2,radius,0,Math.PI*2);
-        ctx.fillStyle=palette[Math.floor(t*palette.length)%palette.length];
-        ctx.strokeStyle=p.lineColor; ctx.lineWidth=p.stroke;
-        if(p.filled)ctx.fill(); ctx.stroke();
+    } else { // Grid
+      const cols2=p.cols||8,rows2=p.rows||8;
+      const cw2=W/cols2,ch2=H/rows2;
+      for(let r=0;r<rows2;r++) for(let c=0;c<cols2;c++){
+        const n=(GS.noise2(c*0.3+p.seed,r*0.3+p.seed)+1)/2;
+        const rad=p.minR+(p.maxR-p.minR)*n;
+        const t=(r*cols2+c)/(rows2*cols2);
+        cx.beginPath(); cx.arc(c*cw2+cw2/2,r*ch2+ch2/2,rad,0,Math.PI*2);
+        cx.fillStyle=pal[Math.floor(t*pal.length)%pal.length];
+        cx.strokeStyle=p.lineColor; cx.lineWidth=p.stroke;
+        if(p.filled)cx.fill(); cx.stroke();
       }
     }
-    ctx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    cx.globalAlpha=1;
+    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 12. TYPOGRAPHY (Generative text/type)
-// ──────────────────────────────────────────────────────────────
+// ── 12. TYPOGRAPHY ────────────────────────────────────────────
 TOOLS.typography = {
   name: 'Type', icon: 'T',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
-    const rng=GS.seededRandom(p.seed);
-    const palette=GS.getPalette(p.palette);
-    const text=p.text||'GENSTUDIO';
-    const chars=text.split('');
-    if(p.type==='Scatter'){
+  render(C, cx, p) {
+    const W=C.width, H=C.height;
+    const rng=GS.seededRng(p.seed);
+    const pal=GS.getPalette(p.palette);
+    cx.fillStyle=p.bg; cx.fillRect(0,0,W,H);
+    const text=(p.text||'GENSTUDIO').split('');
+    const font=p.font||'IBM Plex Mono';
+
+    if (p.type==='Scatter') {
       for(let i=0;i<p.count;i++){
-        const ch=chars[Math.floor(rng()*chars.length)];
+        const ch=text[Math.floor(rng()*text.length)];
         const sz=p.minSize+rng()*(p.maxSize-p.minSize);
-        const x=rng()*W, y=rng()*H;
         const rot=(rng()-0.5)*p.rotation*Math.PI/180;
-        const col=palette[Math.floor(rng()*palette.length)];
-        ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
-        ctx.font=`${p.weight} ${sz}px ${p.font}`;
-        ctx.fillStyle=col; ctx.globalAlpha=0.3+rng()*0.7;
-        ctx.fillText(ch,0,0); ctx.restore();
+        cx.save(); cx.translate(rng()*W,rng()*H); cx.rotate(rot);
+        cx.font=`${p.weight||'bold'} ${sz}px ${font}`;
+        cx.fillStyle=pal[Math.floor(rng()*pal.length)];
+        cx.globalAlpha=0.25+rng()*0.75;
+        cx.fillText(ch,0,0); cx.restore();
       }
-    } else if(p.type==='Stack'){
-      const lineH=p.maxSize*p.lineHeight;
-      let y=lineH;
-      while(y<H+lineH){
-        let x=0; const sz=p.minSize+rng()*(p.maxSize-p.minSize);
-        ctx.font=`${p.weight} ${sz}px ${p.font}`;
-        const col=palette[Math.floor(rng()*palette.length)];
-        ctx.fillStyle=col; ctx.globalAlpha=0.5+rng()*0.5;
+    } else if (p.type==='Stack') {
+      let y=p.maxSize;
+      while(y<H+p.maxSize){
+        let x=0;
+        const sz=p.minSize+rng()*(p.maxSize-p.minSize);
+        cx.font=`${p.weight||'bold'} ${sz}px ${font}`;
+        cx.fillStyle=pal[Math.floor(rng()*pal.length)];
+        cx.globalAlpha=0.4+rng()*0.6;
         while(x<W){
-          const ch=chars[Math.floor(rng()*chars.length)];
-          ctx.fillText(ch,x,y);
-          x+=ctx.measureText(ch).width+p.spacing;
+          const ch=text[Math.floor(rng()*text.length)];
+          cx.fillText(ch,x,y);
+          x+=cx.measureText(ch).width+(p.spacing||2);
         }
-        y+=lineH;
+        y+=sz*(p.lineHeight||1.2);
       }
-    } else if(p.type==='Path'){
-      const sz=Math.min(W,H)*0.15;
-      ctx.font=`bold ${sz}px ${p.font}`;
-      ctx.textBaseline='middle'; ctx.textAlign='center';
-      ctx.fillStyle=palette[0];
-      ctx.globalAlpha=1;
-      ctx.fillText(text,W/2,H/2);
-      // glow
-      if(p.glow>0){
-        ctx.shadowBlur=p.glow; ctx.shadowColor=palette[1]||palette[0];
-        ctx.fillText(text,W/2,H/2);
-        ctx.shadowBlur=0;
-      }
+    } else {
+      const sz=Math.min(W,H)*0.14;
+      cx.font=`bold ${sz}px ${font}`;
+      cx.textAlign='center'; cx.textBaseline='middle';
+      cx.fillStyle=pal[0]; cx.globalAlpha=1;
+      if(p.glow>0){cx.shadowBlur=p.glow;cx.shadowColor=pal[1]||pal[0];}
+      cx.fillText(text.join(''),W/2,H/2);
+      cx.shadowBlur=0;
     }
-    ctx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    cx.globalAlpha=1;
+    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 13. WAVES (Interference / ocean)
-// ──────────────────────────────────────────────────────────────
+// ── 13. WAVES ─────────────────────────────────────────────────
 TOOLS.waves = {
   name: 'Waves', icon: '≈',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
+  render(C, cx, p) {
+    const W=C.width, H=C.height;
+    cx.fillStyle=p.bg; cx.fillRect(0,0,W,H);
     const stops=p.stops||[[0,p.c1||'#0e4d68'],[1,p.c2||'#64dfb8']];
-    for(let i=0;i<p.layers;i++){
-      const t=i/p.layers;
-      const y=H*(t+p.offset/100);
-      const amp=p.amplitude*(1-t*0.3);
-      const freq=p.frequency*(1+t*p.harmonics*0.2);
-      const phase=t*Math.PI*2+p.phase;
-      const col=GS.colorAtGradient(stops,t);
-      ctx.beginPath(); ctx.moveTo(0,H);
+    const N=p.layers||12;
+    for(let i=0;i<N;i++){
+      const t=i/(N-1||1);
+      const yBase=H*t + H*(p.offset||0)/100;
+      const amp=(p.amplitude||60)*(1-t*0.2);
+      const freq=(p.frequency||2)*(1+t*(p.harmonics||3)*0.1);
+      const phase=(p.phase||0)*Math.PI/180+t*Math.PI;
+      const col=GS.gradientAt(stops,t);
+      cx.beginPath(); cx.moveTo(0,H);
       for(let x=0;x<=W;x+=2){
-        const n=p.noise>0?GS.noise2d(x/W*4+p.seed/100,t*2)*p.noise*amp:0;
-        const wy=y+Math.sin(x/W*Math.PI*2*freq+phase)*amp+
-                   Math.sin(x/W*Math.PI*2*freq*p.harmonics+phase*2)*amp*0.3+n;
-        x===0?ctx.moveTo(x,wy):ctx.lineTo(x,wy);
+        const nv=p.noise>0?GS.noise2(x/W*4+(p.seed||0)/100,t*2)*p.noise*amp:0;
+        const y=yBase+Math.sin(x/W*Math.PI*2*freq+phase)*amp
+                     +Math.sin(x/W*Math.PI*2*freq*(p.harmonics||3)+phase*2)*amp*0.25+nv;
+        cx.lineTo(x,y);
       }
-      ctx.lineTo(W,H); ctx.closePath();
-      ctx.fillStyle=col; ctx.globalAlpha=p.opacity/100*(0.4+t*0.6);
-      ctx.fill();
+      cx.lineTo(W,H); cx.closePath();
+      cx.fillStyle=col; cx.globalAlpha=(p.opacity||70)/100*(0.35+t*0.65);
+      cx.fill();
     }
-    ctx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    cx.globalAlpha=1;
+    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 14. VORONOI
-// ──────────────────────────────────────────────────────────────
+// ── 14. VORONOI ───────────────────────────────────────────────
 TOOLS.voronoi = {
   name: 'Voronoi', icon: '⬡',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    const rng=GS.seededRandom(p.seed);
-    const palette=GS.getPalette(p.palette);
+  render(C, cx, p) {
+    const W=C.width, H=C.height;
+    const rng=GS.seededRng(p.seed);
+    const pal=GS.getPalette(p.palette);
     const pts=[];
     for(let i=0;i<p.count;i++){
-      const n=p.relaxed?GS.noise2d(i*0.3+p.seed,i*0.17)*p.relaxation/100:0;
-      pts.push({x:rng()*W+n*W,y:rng()*H+n*H,col:palette[Math.floor(rng()*palette.length)]});
+      pts.push({x:rng()*W,y:rng()*H,col:pal[Math.floor(rng()*pal.length)]});
     }
-    const id=ctx.createImageData(W,H); const d=id.data;
+    const id=cx.createImageData(W,H); const d=id.data;
     for(let y=0;y<H;y++){
       for(let x=0;x<W;x++){
-        let best=Infinity,bestPt=pts[0];
+        let best=Infinity, bc=pts[0];
         for(const pt of pts){
-          const dist=p.metric==='Manhattan'?
-            Math.abs(x-pt.x)+Math.abs(y-pt.y):
-            p.metric==='Chebyshev'?
-            Math.max(Math.abs(x-pt.x),Math.abs(y-pt.y)):
-            (x-pt.x)**2+(y-pt.y)**2;
-          if(dist<best){best=dist;bestPt=pt;}
+          const dist = p.metric==='Manhattan' ? Math.abs(x-pt.x)+Math.abs(y-pt.y)
+            : p.metric==='Chebyshev' ? Math.max(Math.abs(x-pt.x),Math.abs(y-pt.y))
+            : (x-pt.x)**2+(y-pt.y)**2;
+          if(dist<best){best=dist;bc=pt;}
         }
-        const [r,g,b]=GS.hexToRgb(bestPt.col);
+        const [r,g,b]=GS.hexToRgb(bc.col);
         const i2=(y*W+x)*4; d[i2]=r;d[i2+1]=g;d[i2+2]=b;d[i2+3]=255;
       }
     }
-    ctx.putImageData(id,0,0);
+    cx.putImageData(id,0,0);
     if(p.drawEdges){
-      ctx.fillStyle=p.edgeColor||'#000000';
-      for(let y=1;y<H-1;y++){
-        for(let x=1;x<W-1;x++){
-          const i=(y*W+x)*4;
-          const neighbors=[(y-1)*W+x,(y+1)*W+x,y*W+x-1,y*W+x+1];
-          if(neighbors.some(n=>id.data[n*4]!==id.data[i]||id.data[n*4+1]!==id.data[i+1])){
-            ctx.fillRect(x,y,1,1);
-          }
+      const edgeCol=GS.hexToRgb(p.edgeColor||'#000000');
+      const out=cx.getImageData(0,0,W,H);
+      for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){
+        const i2=(y*W+x)*4;
+        const neighbors=[(y-1)*W+x,(y+1)*W+x,y*W+x-1,y*W+x+1];
+        if(neighbors.some(n=>out.data[n*4]!==out.data[i2]||out.data[n*4+1]!==out.data[i2+1])){
+          out.data[i2]=edgeCol[0];out.data[i2+1]=edgeCol[1];out.data[i2+2]=edgeCol[2];
         }
       }
+      cx.putImageData(out,0,0);
     }
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 15. FRACTAL
-// ──────────────────────────────────────────────────────────────
+// ── 15. FRACTAL ───────────────────────────────────────────────
 TOOLS.fractal = {
   name: 'Fractal', icon: '✦',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    const id=ctx.createImageData(W,H); const d=id.data;
-    const palette=GS.getPalette(p.palette);
+  render(C, cx, p) {
+    const W=C.width, H=C.height;
+    const id=cx.createImageData(W,H); const d=id.data;
+    const pal=GS.getPalette(p.palette);
     const maxIter=p.iterations||80;
-    const cx=p.cx||-0.5, cy=p.cy||0;
-    const zoom=p.zoom||1;
+    const zoom=Math.max(0.001,p.zoom||1);
+    const gradStops=pal.map((c,i,a)=>[i/(a.length-1||1),c]);
+
     for(let py=0;py<H;py++){
       for(let px=0;px<W;px++){
-        let x=(px-W/2)/(W/4/zoom)+cx;
-        let y=(py-H/2)/(H/4/zoom)+cy;
-        const c0x=x,c0y=y;
-        let iter=0, mag=0;
+        const c0r=(px-W/2)/(W/4*zoom)+(p.cx||-0.5);
+        const c0i=(py-H/2)/(H/4*zoom)+(p.cy||0);
+        let zr=p.type==='Julia'?c0r:0;
+        let zi=p.type==='Julia'?c0i:0;
+        const cr=p.type==='Julia'?(p.juliaC||-0.7):c0r;
+        const ci2=p.type==='Julia'?(p.juliaCi||0.27):c0i;
+        let iter=0;
         while(iter<maxIter){
-          if(p.type==='Julia'){
-            const nx=x*x-y*y+p.juliaC||(-0.7);
-            const ny=2*x*y+(p.juliaCi||0.27);
-            x=nx; y=ny;
-          } else if(p.type==='Burning Ship'){
-            const nx=x*x-y*y+c0x;
-            const ny=2*Math.abs(x*y)+c0y;
-            x=nx; y=ny;
+          if(p.type==='Burning Ship'){
+            const nr=zr*zr-zi*zi+cr;
+            const ni2=2*Math.abs(zr*zi)+ci2;
+            zr=nr;zi=ni2;
           } else {
-            // Mandelbrot
-            const nx=x*x-y*y+c0x;
-            const ny=2*x*y+c0y;
-            x=nx; y=ny;
+            const nr=zr*zr-zi*zi+cr;
+            const ni2=2*zr*zi+ci2;
+            zr=nr;zi=ni2;
           }
-          mag=x*x+y*y;
-          if(mag>4)break;
+          if(zr*zr+zi*zi>4)break;
           iter++;
         }
-        const t=iter===maxIter?0:iter/maxIter;
-        const col=GS.hexToRgb(GS.colorAtGradient(
-          palette.map((c,i)=>[i/(palette.length-1),c]),
-          p.colorCycles>0?((t*p.colorCycles)%1):t
-        ));
-        const i=(py*W+px)*4; d[i]=col[0];d[i+1]=col[1];d[i+2]=col[2];d[i+3]=255;
+        const t=iter===maxIter?0:(p.colorCycles||1)>0?((iter/maxIter*(p.colorCycles||1))%1):iter/maxIter;
+        const [r,g,b]=GS.hexToRgb(GS.gradientAt(gradStops,t));
+        const i2=(py*W+px)*4; d[i2]=r;d[i2+1]=g;d[i2+2]=b;d[i2+3]=255;
       }
     }
-    ctx.putImageData(id,0,0);
+    cx.putImageData(id,0,0);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 16. PIXEL SORT
-// ──────────────────────────────────────────────────────────────
+// ── 16. PIXEL SORT ────────────────────────────────────────────
 TOOLS.pixelSort = {
   name: 'Pixel Sort', icon: '▦',
-  render(canvas, ctx, p, src) {
-    const W=canvas.width,H=canvas.height;
+  render(C, cx, p, src) {
+    const W=C.width, H=C.height;
     if(!src){
-      // generate base gradient
-      const gr=ctx.createLinearGradient(0,0,W,H);
-      GS.getPalette(p.palette).forEach((c,i,a)=>gr.addColorStop(i/(a.length-1),c));
-      ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
-      GS.applyGrain(ctx,W,H,20);
-    } else { ctx.drawImage(src,0,0,W,H); }
-    const id=ctx.getImageData(0,0,W,H); const d=id.data;
-    const threshold=p.threshold/100;
+      const pal=GS.getPalette(p.palette);
+      const gr=cx.createLinearGradient(0,0,W,H);
+      pal.forEach((c,i,a)=>gr.addColorStop(i/(a.length-1||1),c));
+      cx.fillStyle=gr; cx.fillRect(0,0,W,H);
+      GS.applyGrain(cx,W,H,25);
+    } else { cx.drawImage(src,0,0,W,H); }
+
+    const id=cx.getImageData(0,0,W,H); const d=id.data;
+    const thresh=p.threshold/100;
     function brightness(i){return(d[i]+d[i+1]+d[i+2])/(3*255);}
+
     if(p.direction==='Horizontal'||p.direction==='Both'){
       for(let y=0;y<H;y++){
-        const row=[];
-        for(let x=0;x<W;x++) row.push({x,b:brightness((y*W+x)*4),r:d[(y*W+x)*4],g:d[(y*W+x)*4+1],b2:d[(y*W+x)*4+2]});
         let start=-1;
         for(let x=0;x<=W;x++){
-          const b=x<W?row[x].b:1;
-          if(start===-1&&b>threshold) start=x;
-          else if(start>-1&&(b<=threshold||x===W)){
-            const seg=row.slice(start,x).sort((a,b)=>p.sortBy==='Hue'?
-              GS.rgbToHsl(a.r,a.g,a.b2)[0]-GS.rgbToHsl(b.r,b.g,b.b2)[0]:a.b-b.b);
-            seg.forEach((px,i2)=>{const idx=(y*W+start+i2)*4;d[idx]=px.r;d[idx+1]=px.g;d[idx+2]=px.b2;});
+          const b=x<W?brightness((y*W+x)*4):1;
+          if(start===-1&&b>thresh) start=x;
+          else if(start>-1&&(b<=thresh||x===W)){
+            const seg=[];
+            for(let s=start;s<x;s++) seg.push({r:d[(y*W+s)*4],g:d[(y*W+s)*4+1],b:d[(y*W+s)*4+2],bright:brightness((y*W+s)*4)});
+            const sorted=p.sortBy==='Hue'?
+              seg.sort((a,b2)=>GS.rgbToHsl(a.r,a.g,a.b)[0]-GS.rgbToHsl(b2.r,b2.g,b2.b)[0]):
+              seg.sort((a,b2)=>a.bright-b2.bright);
+            sorted.forEach((px2,i2)=>{const idx=(y*W+start+i2)*4;d[idx]=px2.r;d[idx+1]=px2.g;d[idx+2]=px2.b;});
             start=-1;
           }
         }
@@ -777,163 +781,163 @@ TOOLS.pixelSort = {
         let start=-1;
         for(let y=0;y<=H;y++){
           const b=y<H?brightness((y*W+x)*4):1;
-          if(start===-1&&b>threshold) start=y;
-          else if(start>-1&&(b<=threshold||y===H)){
+          if(start===-1&&b>thresh) start=y;
+          else if(start>-1&&(b<=thresh||y===H)){
             const seg=[];
-            for(let r=start;r<y;r++) seg.push({y:r,b:brightness((r*W+x)*4),r:d[(r*W+x)*4],g:d[(r*W+x)*4+1],b2:d[(r*W+x)*4+2]});
-            seg.sort((a,b2)=>a.b-b2.b);
-            seg.forEach((px,i2)=>{const idx=((start+i2)*W+x)*4;d[idx]=px.r;d[idx+1]=px.g;d[idx+2]=px.b2;});
+            for(let s=start;s<y;s++) seg.push({r:d[(s*W+x)*4],g:d[(s*W+x)*4+1],b:d[(s*W+x)*4+2],bright:brightness((s*W+x)*4)});
+            seg.sort((a,b2)=>a.bright-b2.bright);
+            seg.forEach((px2,i2)=>{const idx=((start+i2)*W+x)*4;d[idx]=px2.r;d[idx+1]=px2.g;d[idx+2]=px2.b;});
             start=-1;
           }
         }
       }
     }
-    ctx.putImageData(id,0,0);
+    cx.putImageData(id,0,0);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 17. TRUCHET (Tiling patterns)
-// ──────────────────────────────────────────────────────────────
+// ── 17. TRUCHET ───────────────────────────────────────────────
 TOOLS.truchet = {
   name: 'Truchet', icon: '⊕',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
-    const rng=GS.seededRandom(p.seed);
-    const palette=GS.getPalette(p.palette);
-    const ts=p.tileSize;
+  render(C, cx, p) {
+    const W=C.width, H=C.height;
+    const rng=GS.seededRng(p.seed);
+    const pal=GS.getPalette(p.palette);
+    cx.fillStyle=p.bg||pal[0]; cx.fillRect(0,0,W,H);
+    const ts=p.tileSize||40;
     const cols=Math.ceil(W/ts)+1, rows=Math.ceil(H/ts)+1;
-    ctx.lineWidth=p.stroke; ctx.strokeStyle=palette[0];
+
     for(let r=0;r<rows;r++){
       for(let c=0;c<cols;c++){
         const x=c*ts-(W%ts)/2, y=r*ts-(H%ts)/2;
         const flip=rng()<0.5;
-        const col=palette[Math.floor(rng()*palette.length)];
-        ctx.fillStyle=col; ctx.strokeStyle=p.twoColor?palette[(Math.floor(rng()*palette.length)+1)%palette.length]:palette[0];
-        ctx.save(); ctx.rect(x,y,ts,ts); ctx.clip();
+        const c1=pal[Math.floor(rng()*pal.length)];
+        const c2=p.twoColor?pal[Math.floor(rng()*pal.length)]:c1;
+        cx.save(); cx.beginPath(); cx.rect(x,y,ts,ts); cx.clip();
+        cx.lineWidth=p.stroke; cx.strokeStyle=c1;
         if(p.type==='Classic'){
-          ctx.beginPath();
-          if(flip){ctx.arc(x,y,ts/2,0,Math.PI/2);ctx.arc(x+ts,y+ts,ts/2,Math.PI,Math.PI*3/2);}
-          else{ctx.arc(x+ts,y,ts/2,Math.PI/2,Math.PI);ctx.arc(x,y+ts,ts/2,Math.PI*3/2,Math.PI*2);}
-          ctx.stroke();
+          cx.beginPath();
+          if(flip){cx.arc(x,y,ts/2,0,Math.PI/2);cx.arc(x+ts,y+ts,ts/2,Math.PI,Math.PI*3/2);}
+          else{cx.arc(x+ts,y,ts/2,Math.PI/2,Math.PI);cx.arc(x,y+ts,ts/2,Math.PI*3/2,Math.PI*2);}
+          cx.stroke();
         } else if(p.type==='Diagonal'){
-          ctx.beginPath();
-          if(flip){ctx.moveTo(x,y);ctx.lineTo(x+ts,y+ts);}
-          else{ctx.moveTo(x+ts,y);ctx.lineTo(x,y+ts);}
-          ctx.stroke();
+          cx.beginPath();
+          flip?cx.moveTo(x,y):cx.moveTo(x+ts,y);
+          flip?cx.lineTo(x+ts,y+ts):cx.lineTo(x,y+ts);
+          cx.stroke();
         } else if(p.type==='SquareCurve'){
-          ctx.fillRect(flip?x:x+ts/2,flip?y:y+ts/2,ts/2,ts/2);
+          cx.fillStyle=c2;
+          cx.fillRect(flip?x:x+ts/2,flip?y:y+ts/2,ts/2,ts/2);
         } else if(p.type==='Triangle'){
-          ctx.beginPath();
-          if(flip){ctx.moveTo(x,y);ctx.lineTo(x+ts,y);ctx.lineTo(x,y+ts);}
-          else{ctx.moveTo(x+ts,y);ctx.lineTo(x+ts,y+ts);ctx.lineTo(x,y+ts);}
-          ctx.closePath(); ctx.fill();
+          cx.fillStyle=c2; cx.beginPath();
+          if(flip){cx.moveTo(x,y);cx.lineTo(x+ts,y);cx.lineTo(x,y+ts);}
+          else{cx.moveTo(x+ts,y);cx.lineTo(x+ts,y+ts);cx.lineTo(x,y+ts);}
+          cx.closePath(); cx.fill();
         }
-        ctx.restore();
+        cx.restore();
       }
     }
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 18. CRYSTAL (Geometric low-poly)
-// ──────────────────────────────────────────────────────────────
+// ── 18. CRYSTAL ───────────────────────────────────────────────
 TOOLS.crystal = {
   name: 'Crystal', icon: '◈',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
-    const rng=GS.seededRandom(p.seed);
-    const palette=GS.getPalette(p.palette);
+  render(C, cx, p) {
+    const W=C.width, H=C.height;
+    const rng=GS.seededRng(p.seed);
+    const pal=GS.getPalette(p.palette);
+    cx.fillStyle=p.bg; cx.fillRect(0,0,W,H);
+    const cols2=p.cols||12, rows2=p.rows||12;
+    const cw2=W/cols2, ch2=H/rows2;
+
+    // Build jittered grid points
     const pts=[];
-    // grid with jitter
-    const cols=p.cols||12, rows=p.rows||12;
-    const cw=W/cols, ch=H/rows;
-    for(let r=-1;r<=rows+1;r++) for(let c=-1;c<=cols+1;c++){
+    for(let r=0;r<=rows2+1;r++) for(let c=0;c<=cols2+1;c++){
       pts.push({
-        x:c*cw+cw/2+(rng()-0.5)*cw*p.jitter/100,
-        y:r*ch+ch/2+(rng()-0.5)*ch*p.jitter/100
+        x: c*cw2+(rng()-0.5)*cw2*(p.jitter||60)/100,
+        y: r*ch2+(rng()-0.5)*ch2*(p.jitter||60)/100
       });
     }
-    // simple delaunay-like triangulation
-    const triangles=[];
-    for(let r=0;r<rows+1;r++) for(let c=0;c<cols+1;c++){
-      const i=r*(cols+2)+c;
-      triangles.push([pts[i],pts[i+1],pts[i+cols+2]]);
-      triangles.push([pts[i+1],pts[i+cols+2],pts[i+cols+3]]);
+    const W2=cols2+2;
+    for(let r=0;r<=rows2;r++) for(let c=0;c<=cols2;c++){
+      const i=r*W2+c;
+      const a=pts[i],b=pts[i+1],cc=pts[i+W2],dd=pts[i+W2+1];
+      [[a,b,cc],[b,cc,dd]].forEach(([p1,p2,p3])=>{
+        const mcx=(p1.x+p2.x+p3.x)/3, mcy=(p1.y+p2.y+p3.y)/3;
+        const n=(GS.noise2(mcx/W*3+p.seed,mcy/H*3+p.seed)+1)/2;
+        const col=pal[Math.floor(n*pal.length)%pal.length];
+        cx.beginPath(); cx.moveTo(p1.x,p1.y); cx.lineTo(p2.x,p2.y); cx.lineTo(p3.x,p3.y);
+        cx.closePath(); cx.fillStyle=col; cx.fill();
+        if(p.stroke>0){cx.strokeStyle=p.lineColor||'rgba(0,0,0,0.2)';cx.lineWidth=p.stroke;cx.stroke();}
+      });
     }
-    triangles.forEach(([a,b,c])=>{
-      const cx=(a.x+b.x+c.x)/3, cy=(a.y+b.y+c.y)/3;
-      const t=(cx/W+cy/H)/2;
-      const n=GS.noise2d(cx/W*3+p.seed,cy/H*3+p.seed);
-      const col=palette[Math.floor(((n+1)/2)*palette.length)%palette.length];
-      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.closePath();
-      ctx.fillStyle=col; ctx.fill();
-      if(p.stroke>0){ ctx.strokeStyle=p.lineColor||'rgba(0,0,0,0.2)'; ctx.lineWidth=p.stroke; ctx.stroke(); }
-    });
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 19. SPIROGRAPH
-// ──────────────────────────────────────────────────────────────
+// ── 19. SPIROGRAPH ────────────────────────────────────────────
 TOOLS.spirograph = {
   name: 'Spirograph', icon: '❋',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
-    const stops=p.stops||[[0,p.c1||'#7c5cfc'],[1,p.c2||'#f5d0fe']];
-    const cx=W/2, cy=H/2;
-    const R=p.R||Math.min(W,H)*0.35;
-    const r=p.r||Math.min(W,H)*0.15;
-    const d=p.d||r*0.7;
-    const steps=p.steps||3000;
-    ctx.lineWidth=p.stroke||1;
-    ctx.beginPath();
+  render(C, cx, p) {
+    const W=C.width, H=C.height;
+    cx.fillStyle=p.bg||'#000000'; cx.fillRect(0,0,W,H);
+    const stops=[[0,p.c1||'#00ff41'],[0.5,p.c2||'#003a0f'],[1,p.c3||'#00ff41']];
+    const pcx2=W/2, pcy2=H/2;
+    const R=Math.min(p.R||300,Math.min(W,H)*0.48);
+    const r=Math.min(p.r||113,R-1);
+    const d=p.d||80;
+    const steps=p.steps||4000;
+    cx.lineWidth=p.stroke||1;
+
+    let prevX=null, prevY=null;
     for(let i=0;i<=steps;i++){
-      const t=i/steps*Math.PI*2*p.loops;
-      const x=cx+(R-r)*Math.cos(t)+d*Math.cos((R-r)/r*t);
-      const y=cy+(R-r)*Math.sin(t)-d*Math.sin((R-r)/r*t);
-      const col=GS.colorAtGradient(stops,i/steps);
-      if(i>0){ctx.strokeStyle=col;ctx.stroke();ctx.beginPath();}
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      const t=i/steps*Math.PI*2*(p.loops||15);
+      const x=pcx2+(R-r)*Math.cos(t)+d*Math.cos((R-r)/Math.max(1,r)*t);
+      const y=pcy2+(R-r)*Math.sin(t)-d*Math.sin((R-r)/Math.max(1,r)*t);
+      if(prevX!==null){
+        cx.beginPath(); cx.moveTo(prevX,prevY); cx.lineTo(x,y);
+        cx.strokeStyle=GS.gradientAt(stops,i/steps);
+        cx.stroke();
+      }
+      prevX=x; prevY=y;
     }
-    ctx.stroke();
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 20. FLOW FIELD
-// ──────────────────────────────────────────────────────────────
+// ── 20. FLOW FIELD ────────────────────────────────────────────
 TOOLS.flowField = {
   name: 'Flow Field', icon: '⟳',
-  render(canvas, ctx, p) {
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle=p.bg; ctx.fillRect(0,0,W,H);
-    const rng=GS.seededRandom(p.seed);
-    const palette=GS.getPalette(p.palette);
-    const particles=[];
-    for(let i=0;i<p.count;i++){
-      particles.push({x:rng()*W,y:rng()*H,age:0,maxAge:p.life+rng()*p.life,col:palette[Math.floor(rng()*palette.length)]});
-    }
-    ctx.lineWidth=p.weight;
-    for(let step=0;step<p.steps;step++){
-      particles.forEach(pt=>{
-        if(pt.age>=pt.maxAge){pt.x=rng()*W;pt.y=rng()*H;pt.age=0;return;}
-        const angle=GS.fbm(pt.x/W*p.scale+p.seed/100,pt.y/H*p.scale+p.seed/100,p.octaves)*Math.PI*2*p.curl;
-        const nx=pt.x+Math.cos(angle)*p.speed;
-        const ny=pt.y+Math.sin(angle)*p.speed;
-        ctx.globalAlpha=(1-pt.age/pt.maxAge)*p.opacity/100;
-        ctx.strokeStyle=pt.col;
-        ctx.beginPath(); ctx.moveTo(pt.x,pt.y); ctx.lineTo(nx,ny); ctx.stroke();
+  render(C, cx, p) {
+    const W=C.width, H=C.height;
+    cx.fillStyle=p.bg; cx.fillRect(0,0,W,H);
+    const rng=GS.seededRng(p.seed);
+    const pal=GS.getPalette(p.palette);
+    const N=Math.min(p.count||500, 3000);
+    const particles=Array.from({length:N},()=>({
+      x:rng()*W, y:rng()*H, age:0,
+      maxAge:p.life+Math.floor(rng()*p.life),
+      col:pal[Math.floor(rng()*pal.length)]
+    }));
+
+    cx.lineWidth=p.weight||1;
+    const sc=p.scale||3, seed=(p.seed||0)/100;
+    const spd=p.speed||2, curl=p.curl||1;
+
+    for(let step=0;step<(p.steps||150);step++){
+      for(const pt of particles){
+        if(pt.age>=pt.maxAge){ pt.x=rng()*W; pt.y=rng()*H; pt.age=0; continue; }
+        const angle=GS.fbm(pt.x/W*sc+seed, pt.y/H*sc+seed, p.octaves||2)*Math.PI*2*curl;
+        const nx=pt.x+Math.cos(angle)*spd, ny=pt.y+Math.sin(angle)*spd;
+        cx.globalAlpha=(1-pt.age/pt.maxAge)*(p.opacity||40)/100;
+        cx.strokeStyle=pt.col;
+        cx.beginPath(); cx.moveTo(pt.x,pt.y); cx.lineTo(nx,ny); cx.stroke();
         pt.x=((nx%W)+W)%W; pt.y=((ny%H)+H)%H; pt.age++;
-      });
+      }
     }
-    ctx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(ctx,W,H,p.grain);
+    cx.globalAlpha=1;
+    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
   }
 };

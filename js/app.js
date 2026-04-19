@@ -1,1079 +1,723 @@
-// ── GenStudio App ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// GenStudio App — UI, state, rendering
+// ═══════════════════════════════════════════════════════════════
 const App = (() => {
-  let currentTool = 'blocks';
-  let canvas, ctx;
-  let renderTimeout = null;
-  let isRendering = false;
-  let loadedImage = null;
 
-  const toolOrder = ['blocks','gradients','lines','organic','plotter','topo','marble',
-    'ascii','dither','noise','circles','typography','waves','voronoi','fractal',
-    'pixelSort','truchet','crystal','spirograph','flowField'];
+const TOOL_ORDER = [
+  'blocks','gradients','lines','organic','plotter','topo','marble',
+  'ascii','dither','noise','circles','typography','waves','voronoi',
+  'fractal','pixelSort','truchet','crystal','spirograph','flowField'
+];
 
-  // ── Per-tool default params ──────────────────────────────────
-  const DEFAULTS = {
-    blocks: {
-      w:800,h:800,seed:0,type:'Mondrian',count:10,complexity:4,asymmetry:50,
-      rotation:0,bg:'#ffffff',palette:'Mondrian',density:40,stroke:2,
-      lineColor:'#111111',wobble:40,texture:60,grain:30,
-    },
-    gradients: {
-      w:800,h:800,angle:45,noiseScale:2,noiseIntensity:55,curveDist:70,detail:2,
-      depth:60,highlights:50,shadows:55,grain:8,brightness:0,contrast:100,saturation:100,
-      seed:0,
-      stops:[[0,'#1a0533'],[0.25,'#4a1080'],[0.5,'#7c5cfc'],[0.75,'#c084fc'],[1,'#f5d0fe']],
-    },
-    lines: {
-      w:800,h:800,seed:42,shape:'Sine Waves',frequency:0.026,amplitude:68,count:40,
-      spacing:1,padding:50,thickness:1.5,bg:'#0a0a0f',bg2:'#1a0a3a',
-      lineColor:'#7c5cfc',lineColor2:'#c084fc',
-      colorGradient:true,bgGradient:false,
-      weightVar:0,wobble:0,taper:0,spacingVar:0,rotationJitter:0,
-      opacityVar:0,colorDrift:0,perlinFlow:0,freqVar:0,octaves:1,
-      noise:0,watercolor:0,halftone:0,blur:0,
-      colorStops:[[0,'#7c5cfc'],[1,'#c084fc']],
-    },
-    organic: {
-      w:800,h:800,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,
-      count:36,amplitude:55,frequency:0.056,harmonics:3,variation:67,
-      wobble:12,roughness:12,taper:8,
-      colorMode:'gradient',bg:'#0a0a0f',grain:0,texture:0,
-      stops:[[0,'#7c5cfc'],[0.33,'#c084fc'],[0.67,'#f5d0fe'],[1,'#7c5cfc']],
-    },
-    plotter: {
-      w:800,h:800,seed:12345,type:'Dot Grid',columns:20,rows:20,jitter:0,
-      shape:'Circle',minSize:4,maxSize:24,strokeWeight:1,filled:true,rotation:0,
-      wobble:0,roughness:0,taper:0,noiseScale:0.02,noiseIntensity:1,
-      palette:'Purple Pink',bg:'#0a0a0f',amount:0,random:false,
-    },
-    topo: {
-      w:800,h:800,seed:12345,levels:20,noiseScale:0.008,octaves:4,falloff:0.5,
-      strokeWeight:1.5,wobble:0,roughness:0,smoothing:50,
-      bg:'#0a0a0f',mode:'Single',lineColor:'#7c5cfc',opacity:100,grain:0,margin:20,
-      stops:[[0,'#7c5cfc'],[1,'#f5d0fe']],
-    },
-    marble: {
-      w:800,h:800,seed:0,noiseScale:1,wind:0,warp:0,fbmStrength:1,fbmDamping:1,
-      watercolorDetail:18,watercolorWarp:0.02,watercolorBlur:1,veinIntensity:0,grain:0,
-      main:'#f0ece0',low:'#c8bfab',mid:'#9b8e7a',high:'#fff9f0',strength:1,
-    },
-    ascii: {
-      w:800,h:600,fontSize:8,letterSpacing:0,lineHeight:1,
-      charSet:'Standard',matchColors:false,saturation:100,
-      bg:'#000000',color:'#ffffff',overlayOpacity:30,asciiOpacity:100,
-      contrast:100,brightness:0,invert:false,grain:0,sketch:false,seed:0,
-    },
-    dither: {
-      w:800,h:800,palette:'Game Boy',source:'Gradient',type:'Noise',
-      pattern:'Bayer 4x4',mode:'Image',style:'Threshold',shape:'Square',
-      cellSize:2,
-    },
-    noise: {
-      w:800,h:800,seed:0,scale:4,octaves:4,warp:0,grain:0,
-      ridged:false,terraced:false,terraces:8,
-      c1:'#0a0a0f',c2:'#7c5cfc',
-      stops:[[0,'#0a0a0f'],[0.5,'#4a1080'],[1,'#7c5cfc']],
-    },
-    circles: {
-      w:800,h:800,seed:0,type:'Concentric',count:20,
-      cx:50,cy:50,minR:10,maxR:60,
-      palette:'Purple Dream',bg:'#0a0a0f',lineColor:'rgba(255,255,255,0.3)',
-      stroke:1,filled:false,pack:true,rows:8,cols:8,grain:0,
-    },
-    typography: {
-      w:800,h:800,seed:0,text:'GENSTUDIO',type:'Scatter',
-      font:'JetBrains Mono',weight:'bold',count:200,
-      minSize:12,maxSize:80,rotation:360,spacing:2,lineHeight:1.2,
-      glow:0,palette:'Purple Dream',bg:'#0a0a0f',grain:0,
-    },
-    waves: {
-      w:800,h:800,seed:0,layers:12,amplitude:60,frequency:2,harmonics:3,
-      phase:0,offset:0,noise:0,opacity:70,grain:0,
-      bg:'#0f1c2e',stops:[[0,'#0e4d68'],[0.5,'#1a9e8c'],[1,'#64dfb8']],
-    },
-    voronoi: {
-      w:800,h:800,seed:0,count:40,palette:'Purple Dream',
-      metric:'Euclidean',relaxed:false,relaxation:50,
-      drawEdges:true,edgeColor:'#0a0a0f',grain:0,
-    },
-    fractal: {
-      w:800,h:800,type:'Mandelbrot',cx:-0.5,cy:0,zoom:1,iterations:80,
-      juliaC:-0.7,juliaCi:0.27,colorCycles:1,
-      palette:'Cyberpunk',grain:0,
-    },
-    pixelSort: {
-      w:800,h:800,seed:0,direction:'Horizontal',threshold:50,sortBy:'Brightness',
-      palette:'Purple Dream',
-    },
-    truchet: {
-      w:800,h:800,seed:0,type:'Classic',tileSize:40,stroke:2,
-      palette:'Mondrian',bg:'#ffffff',twoColor:true,grain:0,
-    },
-    crystal: {
-      w:800,h:800,seed:0,cols:12,rows:12,jitter:60,
-      palette:'Purple Dream',bg:'#0a0a0f',lineColor:'rgba(0,0,0,0.15)',stroke:0.5,grain:0,
-    },
-    spirograph: {
-      w:800,h:800,bg:'#0a0a0f',R:300,r:113,d:80,loops:15,steps:5000,stroke:1,grain:0,
-      c1:'#7c5cfc',c2:'#f5d0fe',stops:[[0,'#7c5cfc'],[0.5,'#c084fc'],[1,'#f5d0fe']],
-    },
-    flowField: {
-      w:800,h:800,seed:0,count:500,life:80,steps:200,speed:2,
-      scale:3,octaves:2,curl:1,weight:1,opacity:40,
-      palette:'Purple Dream',bg:'#0a0a0f',grain:0,
-    },
+// ── Default params ────────────────────────────────────────────
+const DEFAULTS = {
+  blocks:    { w:800,h:800,seed:42,type:'Mondrian',count:10,complexity:4,asymmetry:50,bg:'#ffffff',palette:'Mondrian',density:40,stroke:2,lineColor:'#111111',wobble:40,grain:30 },
+  gradients: { w:800,h:800,seed:0,angle:45,noiseScale:2,noiseIntensity:55,curveDist:70,detail:2,depth:60,highlights:50,shadows:55,grain:8,brightness:0,contrast:100,saturation:100,stops:[[0,'#1a0533'],[0.33,'#4a1080'],[0.66,'#7c5cfc'],[1,'#f5d0fe']] },
+  lines:     { w:800,h:800,seed:42,shape:'Sine Waves',frequency:0.026,amplitude:68,count:40,padding:50,thickness:1.5,bg:'#0a0a0f',bg2:'#1a0a3a',lineColor:'#00ff41',lineColor2:'#003a0f',colorGradient:true,bgGradient:false,weightVar:0,wobble:0,opacityVar:0,rotationJitter:0,colorDrift:0,freqVar:0,halftone:0,grain:0 },
+  organic:   { w:800,h:800,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,amplitude:55,frequency:0.056,harmonics:3,wobble:12,roughness:12,colorMode:'gradient',bg:'#050505',palette:'Terminal',grain:0,stops:[[0,'#00ff41'],[0.5,'#003a0f'],[1,'#00ff41']] },
+  plotter:   { w:800,h:800,seed:12345,type:'Dot Grid',columns:20,rows:20,jitter:0,shape:'Circle',minSize:4,maxSize:24,strokeWeight:1,filled:true,rotation:0,wobble:0,noiseScale:0.02,noiseIntensity:1,palette:'Terminal',bg:'#050505',margin:40,grain:0 },
+  topo:      { w:800,h:800,seed:12345,levels:20,noiseScale:0.008,octaves:4,falloff:0.5,strokeWeight:1.5,wobble:0,smoothing:50,bg:'#050505',mode:'Single',lineColor:'#00ff41',opacity:100,grain:0,margin:20 },
+  marble:    { w:800,h:800,seed:0,noiseScale:1,wind:0,warp:0,fbmStrength:1,fbmDamping:1,grain:0,main:'#f0ece0',low:'#c8bfab',mid:'#9b8e7a',high:'#fff9f0',strength:1 },
+  ascii:     { w:800,h:600,seed:0,fontSize:8,letterSpacing:0,lineHeight:1,charSet:'Standard',matchColors:false,bg:'#000000',color:'#00ff41',contrast:100,brightness:0,invert:false,grain:0 },
+  dither:    { w:800,h:800,seed:0,palette:'Game Boy',sourceType:'Gradient',pattern:'Bayer 4x4',shape:'Square',cellSize:2 },
+  noise:     { w:800,h:800,seed:0,scale:4,octaves:4,warp:0,grain:0,ridged:false,terraced:false,terraces:8,c1:'#050505',c2:'#00ff41',stops:[[0,'#050505'],[0.5,'#003a0f'],[1,'#00ff41']] },
+  circles:   { w:800,h:800,seed:0,type:'Concentric',count:20,cx:50,cy:50,minR:8,maxR:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.3)',stroke:1,filled:false,pack:true,rows:8,cols:8,grain:0 },
+  typography:{ w:800,h:800,seed:0,text:'GENSTUDIO',type:'Scatter',font:'IBM Plex Mono',weight:'bold',count:200,minSize:10,maxSize:80,rotation:360,spacing:2,lineHeight:1.2,glow:0,palette:'Terminal',bg:'#050505',grain:0 },
+  waves:     { w:800,h:800,seed:0,layers:12,amplitude:60,frequency:2,harmonics:3,phase:0,offset:0,noise:0,opacity:70,grain:0,bg:'#0f1c2e',c1:'#0e4d68',c2:'#64dfb8',stops:[[0,'#0e4d68'],[0.5,'#1a9e8c'],[1,'#64dfb8']] },
+  voronoi:   { w:800,h:800,seed:0,count:40,palette:'Terminal',metric:'Euclidean',drawEdges:true,edgeColor:'#000000',grain:0 },
+  fractal:   { w:800,h:800,type:'Mandelbrot',cx:-0.5,cy:0,zoom:1,iterations:80,juliaC:-0.7,juliaCi:0.27,colorCycles:1,palette:'Cyberpunk',grain:0 },
+  pixelSort: { w:800,h:800,seed:0,direction:'Horizontal',threshold:50,sortBy:'Brightness',palette:'Terminal' },
+  truchet:   { w:800,h:800,seed:0,type:'Classic',tileSize:40,stroke:2,palette:'Mondrian',bg:'#ffffff',twoColor:true,grain:0 },
+  crystal:   { w:800,h:800,seed:0,cols:12,rows:12,jitter:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.15)',stroke:0.5,grain:0 },
+  spirograph:{ w:800,h:800,bg:'#050505',R:300,r:113,d:80,loops:15,steps:4000,stroke:1,grain:0,c1:'#00ff41',c2:'#003a0f',c3:'#7affaa' },
+  flowField: { w:800,h:800,seed:0,count:500,life:80,steps:150,speed:2,scale:3,octaves:2,curl:1,weight:1,opacity:40,palette:'Terminal',bg:'#050505',grain:0 },
+};
+
+// ── State ─────────────────────────────────────────────────────
+let canvas, ctx;
+let current = 'blocks';
+let params = {};
+let renderTimer = null;
+let loadedImage = null;
+
+// Deep clone defaults
+function resetParams(tool) {
+  params[tool] = JSON.parse(JSON.stringify(DEFAULTS[tool] || {}));
+}
+TOOL_ORDER.forEach(t => resetParams(t));
+
+// ── Sidebar HTML builders ─────────────────────────────────────
+function R(id, name, val, min, max, step, suffix='') {
+  const display = typeof val === 'number' ? (Number.isInteger(step) ? val : parseFloat(val).toFixed(step < 0.01 ? 3 : step < 0.1 ? 2 : 1)) : val;
+  return `<div class="ctrl">
+    <div class="ctrl-row"><span class="ctrl-lbl">${name}</span><span class="ctrl-v" id="v_${id}">${display}${suffix}</span></div>
+    <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}">
+  </div>`;
+}
+function S(id, name, opts, val) {
+  const opts2 = opts.map(o => `<option value="${o}"${o===val?' selected':''}>${o}</option>`).join('');
+  return `<div class="ctrl"><div class="ctrl-row"><span class="ctrl-lbl">${name}</span></div><select id="${id}">${opts2}</select></div>`;
+}
+function C2(id, name, val) {
+  return `<div class="color-row"><span class="color-lbl">${name}</span><div class="color-swatch" style="background:${val||'#000'}"><input type="color" id="${id}" value="${val||'#000000'}"></div></div>`;
+}
+function T(id, name, val) {
+  return `<div class="tog-row"><span class="tog-lbl">${name}</span><button class="tog${val?' on':''}" id="${id}"></button></div>`;
+}
+function SEC(title, body, open=true) {
+  return `<div class="sec${open?'':' closed'}"><div class="sec-hdr"><span class="sec-title">${title}</span><span class="sec-arrow">▾</span></div><div class="sec-body">${body}</div></div>`;
+}
+function CANVAS_SEC(p) {
+  const snames = Object.keys(GS.SIZES);
+  const pills = snames.map(n => {
+    const [w,h]=GS.SIZES[n];
+    const active = p.w===w&&p.h===h;
+    return `<button class="size-pill${active?' active':''}" data-size="${n}">${n}</button>`;
+  }).join('');
+  return SEC('Canvas', `<div class="size-grid">${pills}</div>
+<div class="custom-size">
+  <input type="number" id="cw" value="${p.w}" min="200" max="4096" style="width:70px">
+  <span>×</span>
+  <input type="number" id="ch" value="${p.h}" min="200" max="4096" style="width:70px">
+</div>`);
+}
+const PAL_OPTS = GS.PALETTE_NAMES;
+
+function buildPanel(tool) {
+  const p = params[tool];
+  const panels = {
+    blocks: CANVAS_SEC(p) +
+      SEC('Pattern',
+        R('seed','Seed',p.seed,0,9999,1) +
+        S('type','Type',['Mondrian','Columns','Rows','Grid'],p.type) +
+        R('count','Depth',p.count,2,20,1) +
+        R('complexity','Split Chance',p.complexity,1,10,0.1) +
+        R('asymmetry','Asymmetry',p.asymmetry,0,100,1)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('palette','Palette',PAL_OPTS,p.palette) +
+        R('density','Color Density',p.density,0,100,1) +
+        C2('lineColor','Border Color',p.lineColor)
+      ) +
+      SEC('Stroke',
+        R('stroke','Line Weight',p.stroke,0,20,0.5) +
+        R('wobble','Edge Wobble',p.wobble,0,100,1)
+      ) +
+      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+
+    gradients: CANVAS_SEC(p) +
+      SEC('Flow',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('angle','Angle',p.angle,0,360,1,'°') +
+        R('noiseScale','Noise Scale',p.noiseScale,0.1,12,0.1) +
+        R('noiseIntensity','Intensity',p.noiseIntensity,0,100,1) +
+        R('curveDist','Curve Distortion',p.curveDist,0,100,1) +
+        R('detail','Detail',p.detail,1,8,1)
+      ) +
+      SEC('Depth & Light',
+        R('depth','Depth',p.depth,0,100,1) +
+        R('highlights','Highlights',p.highlights,0,100,1) +
+        R('shadows','Shadows',p.shadows,0,100,1)
+      ) +
+      SEC('Adjustments',
+        R('grain','Grain',p.grain,0,40,1) +
+        R('brightness','Brightness',p.brightness,-100,100,1) +
+        R('contrast','Contrast',p.contrast,50,200,1) +
+        R('saturation','Saturation',p.saturation,0,200,1)
+      ),
+
+    lines: CANVAS_SEC(p) +
+      SEC('Shape',
+        S('shape','Shape',['Sine Waves','Horizontal Lines','Vertical Lines','Zigzag','Diagonal','Concentric','Radial','Spiral','Grid'],p.shape) +
+        R('frequency','Frequency',p.frequency,0.001,0.3,0.001) +
+        R('amplitude','Amplitude',p.amplitude,0,300,1) +
+        R('count','Count',p.count,1,300,1) +
+        R('padding','Padding',p.padding,0,200,1) +
+        R('thickness','Thickness',p.thickness,0.1,20,0.1) +
+        R('seed','Seed',p.seed,0,9999,1)
+      ) +
+      SEC('Background',
+        T('bgGradient','Gradient BG',p.bgGradient) +
+        C2('bg','BG Color 1',p.bg) +
+        C2('bg2','BG Color 2',p.bg2||p.bg)
+      ) +
+      SEC('Color',
+        T('colorGradient','Gradient Lines',p.colorGradient) +
+        C2('lineColor','Line Color',p.lineColor) +
+        C2('lineColor2','Color 2',p.lineColor2||p.lineColor)
+      ) +
+      SEC('Variation',
+        R('weightVar','Weight Var',p.weightVar,0,100,1) +
+        R('wobble','Wobble',p.wobble,0,100,1) +
+        R('opacityVar','Opacity Var',p.opacityVar,0,100,1) +
+        R('rotationJitter','Rotation Jitter',p.rotationJitter,0,45,0.5,'°') +
+        R('colorDrift','Color Drift',p.colorDrift,0,100,1)
+      ) +
+      SEC('Effects',
+        R('halftone','Halftone',p.halftone,0,30,1) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    organic: CANVAS_SEC(p) +
+      SEC('Paths',
+        R('seed','Seed',p.seed,0,99999,1) +
+        S('pathType','Type',['Waves','Filled','Curl','Strand'],p.pathType) +
+        R('pathCount','Path Count',p.pathCount,1,200,1) +
+        R('lineWeight','Line Weight',p.lineWeight,0.1,80,0.5)
+      ) +
+      SEC('Algorithm',
+        R('amplitude','Amplitude',p.amplitude,1,300,1) +
+        R('frequency','Frequency',p.frequency,0.005,0.5,0.005) +
+        R('harmonics','Harmonics',p.harmonics,1,8,1) +
+        R('wobble','Wobble',p.wobble,0,100,1) +
+        R('roughness','Roughness',p.roughness,0,100,1)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('colorMode','Mode',['gradient','palette'],p.colorMode) +
+        S('palette','Palette',PAL_OPTS,p.palette||'Terminal')
+      ) +
+      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+
+    plotter: CANVAS_SEC(p) +
+      SEC('Grid',
+        R('seed','Seed',p.seed,0,99999,1) +
+        S('type','Type',['Dot Grid','Random','Hexagonal'],p.type) +
+        R('columns','Columns',p.columns,2,80,1) +
+        R('rows','Rows',p.rows,2,80,1) +
+        R('jitter','Jitter',p.jitter,0,1,0.01) +
+        R('margin','Margin',p.margin,0,200,1)
+      ) +
+      SEC('Shape',
+        S('shape','Shape',['Circle','Square','Triangle','Line','Cross','Diamond','Hexagon'],p.shape) +
+        R('minSize','Min Size',p.minSize,1,80,1) +
+        R('maxSize','Max Size',p.maxSize,1,150,1) +
+        R('strokeWeight','Stroke',p.strokeWeight,0.1,10,0.1) +
+        T('filled','Filled',p.filled) +
+        R('rotation','Rotation',p.rotation,0,360,1,'°') +
+        R('wobble','Wobble',p.wobble,0,180,1,'°')
+      ) +
+      SEC('Noise',
+        R('noiseScale','Scale',p.noiseScale,0.001,0.1,0.001) +
+        R('noiseIntensity','Intensity',p.noiseIntensity,0,3,0.05)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('palette','Palette',PAL_OPTS,p.palette) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    topo: CANVAS_SEC(p) +
+      SEC('Terrain',
+        R('seed','Seed',p.seed,0,99999,1) +
+        R('levels','Contour Levels',p.levels,2,80,1) +
+        R('noiseScale','Scale',p.noiseScale,0.001,0.05,0.001) +
+        R('octaves','Octaves',p.octaves,1,8,1) +
+        R('falloff','Falloff',p.falloff,0.1,2,0.05)
+      ) +
+      SEC('Stroke',
+        R('strokeWeight','Weight',p.strokeWeight,0.1,12,0.1) +
+        R('wobble','Wobble',p.wobble,0,50,1)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('mode','Mode',['Single','Gradient','Rainbow'],p.mode) +
+        C2('lineColor','Line Color',p.lineColor) +
+        R('opacity','Opacity',p.opacity,10,100,1,'%')
+      ) +
+      SEC('Effects',
+        R('grain','Grain',p.grain,0,80,1) +
+        R('margin','Margin',p.margin,0,100,1)
+      ),
+
+    marble: CANVAS_SEC(p) +
+      SEC('Colors',
+        C2('main','Main',p.main) + C2('low','Low',p.low) +
+        C2('mid','Mid',p.mid) + C2('high','High',p.high)
+      ) +
+      SEC('Fluid',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('noiseScale','Scale',p.noiseScale,0.1,10,0.1) +
+        R('wind','Wind',p.wind,0,5,0.1) +
+        R('warp','Warp',p.warp,0,5,0.1) +
+        R('strength','Strength',p.strength,0.1,10,0.1)
+      ) +
+      SEC('FBM',
+        R('fbmStrength','FBM Strength',p.fbmStrength,0,5,0.1) +
+        R('fbmDamping','FBM Damping',p.fbmDamping,0,5,0.1)
+      ) +
+      SEC('Effects', R('grain','Grain',p.grain,0,60,1)),
+
+    ascii: CANVAS_SEC(p) +
+      SEC('Source',
+        `<div class="upload-zone" id="ascii-zone"><input type="file" id="ascii-file" accept="image/*"><div>LOAD IMAGE</div><div style="font-size:9px;margin-top:3px;color:var(--text4)">drag & drop or click</div></div>
+        <button class="btn btn-ghost btn-sm" id="ascii-clear" style="width:100%;margin-bottom:4px">CLEAR IMAGE</button>`
+      ) +
+      SEC('Characters',
+        S('charSet','Char Set',['Standard','Dense','Blocks','Binary','Braille'],p.charSet) +
+        T('matchColors','Match Image Colors',p.matchColors)
+      ) +
+      SEC('Rendering',
+        R('fontSize','Font Size',p.fontSize,4,32,1) +
+        R('lineHeight','Line Height',p.lineHeight,0.5,3,0.1) +
+        R('seed','Seed (pattern)',p.seed,0,9999,1)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        C2('color','Text Color',p.color||'#00ff41')
+      ) +
+      SEC('Adjustments',
+        R('contrast','Contrast',p.contrast,50,200,1) +
+        R('brightness','Brightness',p.brightness,-100,100,1) +
+        T('invert','Invert',p.invert)
+      ),
+
+    dither: CANVAS_SEC(p) +
+      SEC('Source',
+        `<div class="upload-zone" id="dither-zone"><input type="file" id="dither-file" accept="image/*"><div>LOAD IMAGE</div></div>` +
+        S('sourceType','Source Type',['Gradient','Noise'],p.sourceType)
+      ) +
+      SEC('Pattern',
+        S('pattern','Matrix',['Bayer 4x4','Bayer 8x8'],p.pattern) +
+        S('shape','Cell Shape',['Square','Circle','Diamond'],p.shape) +
+        R('cellSize','Cell Size',p.cellSize,1,20,1,'px') +
+        R('seed','Seed',p.seed,0,9999,1)
+      ) +
+      SEC('Palette', S('palette','Palette',PAL_OPTS,p.palette)),
+
+    noise: CANVAS_SEC(p) +
+      SEC('Noise',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('scale','Scale',p.scale,0.5,20,0.1) +
+        R('octaves','Octaves',p.octaves,1,8,1) +
+        R('warp','Domain Warp',p.warp,0,3,0.05)
+      ) +
+      SEC('Style',
+        T('ridged','Ridged',p.ridged) +
+        T('terraced','Terraced',p.terraced) +
+        R('terraces','Terraces',p.terraces,2,20,1)
+      ) +
+      SEC('Color',
+        C2('c1','Dark Color',p.c1) +
+        C2('c2','Light Color',p.c2)
+      ) +
+      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+
+    circles: CANVAS_SEC(p) +
+      SEC('Type',
+        R('seed','Seed',p.seed,0,9999,1) +
+        S('type','Type',['Concentric','Random Bubble','Grid'],p.type) +
+        R('count','Count',p.count,3,600,1) +
+        R('cx','Center X',p.cx,0,100,1,'%') +
+        R('cy','Center Y',p.cy,0,100,1,'%')
+      ) +
+      SEC('Size',
+        R('minR','Min Radius',p.minR,1,300,1) +
+        R('maxR','Max Radius',p.maxR,1,500,1) +
+        R('stroke','Stroke',p.stroke,0,15,0.5) +
+        T('filled','Filled',p.filled) +
+        T('pack','Pack (no overlap)',p.pack) +
+        R('rows','Grid Rows',p.rows,2,30,1) +
+        R('cols','Grid Cols',p.cols,2,30,1)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('palette','Palette',PAL_OPTS,p.palette) +
+        C2('lineColor','Stroke Color',p.lineColor)
+      ) +
+      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+
+    typography: CANVAS_SEC(p) +
+      SEC('Text',
+        `<div class="ctrl"><div class="ctrl-row"><span class="ctrl-lbl">Text</span></div><input type="text" id="text" value="${p.text||'GENSTUDIO'}"></div>` +
+        S('type','Layout',['Scatter','Stack','Path'],p.type) +
+        R('seed','Seed',p.seed,0,9999,1)
+      ) +
+      SEC('Font',
+        S('font','Font',['IBM Plex Mono','Space Grotesk','Georgia','Arial Black','Courier New','Impact'],p.font) +
+        S('weight','Weight',['100','300','400','700','900','bold'],p.weight) +
+        R('minSize','Min Size',p.minSize,4,300,1) +
+        R('maxSize','Max Size',p.maxSize,4,500,1) +
+        R('spacing','Spacing',p.spacing,0,30,0.5) +
+        R('lineHeight','Line Height',p.lineHeight,0.5,3,0.1)
+      ) +
+      SEC('Transform',
+        R('count','Count',p.count,10,2000,10) +
+        R('rotation','Rotation Range',p.rotation,0,360,1,'°') +
+        R('glow','Glow',p.glow,0,100,1)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('palette','Palette',PAL_OPTS,p.palette) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    waves: CANVAS_SEC(p) +
+      SEC('Wave',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('layers','Layers',p.layers,1,50,1) +
+        R('amplitude','Amplitude',p.amplitude,0,400,1) +
+        R('frequency','Frequency',p.frequency,0.2,20,0.1) +
+        R('harmonics','Harmonics',p.harmonics,1,12,0.5) +
+        R('phase','Phase',p.phase,0,360,1,'°') +
+        R('offset','Y Offset',p.offset,-50,100,1,'%') +
+        R('noise','Noise',p.noise,0,1,0.01) +
+        R('opacity','Opacity',p.opacity,10,100,1,'%')
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        C2('c1','Wave Start',p.c1||'#0e4d68') +
+        C2('c2','Wave End',p.c2||'#64dfb8')
+      ) +
+      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+
+    voronoi: CANVAS_SEC(p) +
+      SEC('Points',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('count','Points',p.count,3,300,1) +
+        S('metric','Distance',['Euclidean','Manhattan','Chebyshev'],p.metric)
+      ) +
+      SEC('Color',
+        S('palette','Palette',PAL_OPTS,p.palette) +
+        T('drawEdges','Draw Edges',p.drawEdges) +
+        C2('edgeColor','Edge Color',p.edgeColor||'#000000')
+      ) +
+      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+
+    fractal: CANVAS_SEC(p) +
+      SEC('Type',
+        S('type','Fractal',['Mandelbrot','Julia','Burning Ship'],p.type) +
+        R('iterations','Iterations',p.iterations,20,500,5) +
+        R('zoom','Zoom',p.zoom,0.1,50,0.1) +
+        R('cx','Center X',p.cx,-3,3,0.01) +
+        R('cy','Center Y',p.cy,-2,2,0.01)
+      ) +
+      SEC('Julia',
+        R('juliaC','C Real',p.juliaC,-2,2,0.01) +
+        R('juliaCi','C Imag',p.juliaCi,-2,2,0.01)
+      ) +
+      SEC('Color',
+        S('palette','Palette',PAL_OPTS,p.palette) +
+        R('colorCycles','Color Cycles',p.colorCycles,0,10,0.5)
+      ),
+
+    pixelSort: CANVAS_SEC(p) +
+      SEC('Source',
+        `<div class="upload-zone" id="ps-zone"><input type="file" id="ps-file" accept="image/*"><div>LOAD IMAGE</div></div>` +
+        S('palette','Base Palette',PAL_OPTS,p.palette)
+      ) +
+      SEC('Sort',
+        S('direction','Direction',['Horizontal','Vertical','Both'],p.direction) +
+        R('threshold','Threshold',p.threshold,0,100,1,'%') +
+        S('sortBy','Sort By',['Brightness','Hue','Saturation'],p.sortBy)
+      ),
+
+    truchet: CANVAS_SEC(p) +
+      SEC('Tile',
+        R('seed','Seed',p.seed,0,9999,1) +
+        S('type','Type',['Classic','Diagonal','SquareCurve','Triangle'],p.type) +
+        R('tileSize','Size',p.tileSize,8,120,4) +
+        R('stroke','Stroke',p.stroke,0.5,12,0.5) +
+        T('twoColor','Two Color',p.twoColor)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('palette','Palette',PAL_OPTS,p.palette) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    crystal: CANVAS_SEC(p) +
+      SEC('Grid',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('cols','Columns',p.cols,3,50,1) +
+        R('rows','Rows',p.rows,3,50,1) +
+        R('jitter','Jitter',p.jitter,0,100,1,'%')
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('palette','Palette',PAL_OPTS,p.palette) +
+        C2('lineColor','Edge Color',p.lineColor||'rgba(0,0,0,0.2)') +
+        R('stroke','Edge Weight',p.stroke,0,6,0.25) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    spirograph: CANVAS_SEC(p) +
+      SEC('Parameters',
+        R('R','Outer Radius',p.R,50,600,5) +
+        R('r','Inner Radius',p.r,5,595,5) +
+        R('d','Pen Offset',p.d,0,400,5) +
+        R('loops','Loops',p.loops,1,60,1) +
+        R('steps','Resolution',p.steps,200,10000,100) +
+        R('stroke','Stroke',p.stroke,0.1,10,0.1)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        C2('c1','Color Start',p.c1||'#00ff41') +
+        C2('c2','Color Mid',p.c2||'#003a0f') +
+        C2('c3','Color End',p.c3||'#7affaa')
+      ) +
+      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+
+    flowField: CANVAS_SEC(p) +
+      SEC('Particles',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('count','Count',p.count,50,3000,50) +
+        R('life','Lifespan',p.life,10,300,5) +
+        R('steps','Steps',p.steps,30,400,10) +
+        R('speed','Speed',p.speed,0.2,15,0.2) +
+        R('weight','Line Weight',p.weight,0.1,8,0.1) +
+        R('opacity','Opacity',p.opacity,5,100,1,'%')
+      ) +
+      SEC('Field',
+        R('scale','Field Scale',p.scale,0.5,20,0.5) +
+        R('octaves','Octaves',p.octaves,1,6,1) +
+        R('curl','Curl',p.curl,0.1,6,0.1)
+      ) +
+      SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('palette','Palette',PAL_OPTS,p.palette) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
   };
+  return panels[tool] || SEC('Controls', '<p style="color:var(--text4);font-size:10px;padding:4px">No controls for this tool.</p>');
+}
 
-  const params = {};
-  Object.keys(DEFAULTS).forEach(k=>params[k]={...DEFAULTS[k]});
+// ── Switch tool ───────────────────────────────────────────────
+function switchTool(id) {
+  if (!TOOLS[id]) return;
+  current = id;
+  // nav highlight
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const ni = document.querySelector(`.nav-item[data-tool="${id}"]`);
+  if (ni) ni.classList.add('active');
+  // header title
+  const tt = document.getElementById('tool-name');
+  if (tt) tt.innerHTML = `<span>${TOOLS[id].name}</span>`;
+  // build sidebar
+  const sc = document.getElementById('sidebar-content');
+  if (sc) {
+    sc.innerHTML = buildPanel(id);
+    bindSection(id);
+    sc.querySelectorAll('.sec-hdr').forEach(h => {
+      h.addEventListener('click', () => h.closest('.sec').classList.toggle('closed'));
+    });
+  }
+  schedRender();
+}
 
-  // ── Sidebar panels HTML ───────────────────────────────────────
-  function makeSidebarHTML(tool) {
-    const p={...Object.assign({}, ...Object.values(DEFAULTS)), ...(params[tool]||{})};
-    const gradientStops = Array.isArray(p.stops) ? p.stops : [[0,'#1a0533'],[1,'#f5d0fe']];
-    const palList=Object.keys(GS.PALETTES).map(k=>`<option ${k===p.palette?'selected':''}>${k}</option>`).join('');
-    const sizeList=Object.keys(GS.SIZES).map(k=>`<option value="${k}" ${p.w===GS.SIZES[k][0]&&p.h===GS.SIZES[k][1]?'selected':''}>${k}</option>`).join('');
+// ── Bind controls ─────────────────────────────────────────────
+function bindSection(tool) {
+  const p = params[tool];
+  const sc = document.getElementById('sidebar-content');
+  if (!sc) return;
 
-    const canvasSection=`
-<div class="section">
-  <div class="section-header"><span class="section-title">Canvas</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    <div class="ctrl"><div class="ctrl-label"><span class="ctrl-name">Size</span></div>
-      <select id="size-select">${sizeList}<option value="Custom">Custom</option></select>
-    </div>
-    <div id="custom-size-row" class="custom-size-row" style="display:none">
-      <input type="number" id="custom-w" value="${p.w}" min="200" max="4000" placeholder="W">
-      <span>×</span>
-      <input type="number" id="custom-h" value="${p.h}" min="200" max="4000" placeholder="H">
-    </div>
-  </div>
-</div>`;
+  // Ranges
+  sc.querySelectorAll('input[type=range]').forEach(el => {
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value);
+      p[el.id] = v;
+      const vEl = document.getElementById('v_' + el.id);
+      if (vEl) vEl.textContent = el.value + (el.dataset.suffix || '');
+      schedRender();
+    });
+  });
 
-    const panels = {
-      blocks: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Pattern</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-    ${selectCtrl('type','Pattern Type',['Mondrian','Halved','Columns','Rows','Grid'],p.type)}
-    ${sliderCtrl('count','Block Count',p.count,3,30,1)}
-    ${sliderCtrl('complexity','Complexity',p.complexity,1,10,0.1)}
-    ${sliderCtrl('asymmetry','Asymmetry',p.asymmetry,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${paletteCtrl('palette','Palette',p.palette)}
-    ${sliderCtrl('density','Color Density',p.density,0,100,1)}
-    ${colorCtrl('lineColor','Line Color',p.lineColor)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Stroke</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('stroke','Line Weight',p.stroke,0,20,0.5)}
-    ${sliderCtrl('wobble','Edge Wobble',p.wobble,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Effects</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('texture','Texture',p.texture,0,100,1)}
-    ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
-  </div>
-</div>`,
+  // Selects
+  sc.querySelectorAll('select').forEach(el => {
+    el.addEventListener('change', () => { p[el.id] = el.value; schedRender(); });
+  });
 
-      gradients: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Colors</span><span class="section-toggle">▾</span></div>
-  <div class="section-body" id="grad-stops-ui">
-    ${gradientStops.map((s,i)=>`<div class="ctrl toggle-row"><span class="ctrl-name">${Math.round(s[0]*100)}%</span>${colorCtrl('grad-c'+i,'',s[1])}</div>`).join('')}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Flow</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('angle','Angle',p.angle,0,360,1,'°')}
-    ${sliderCtrl('noiseScale','Noise Scale',p.noiseScale,0.1,10,0.1)}
-    ${sliderCtrl('noiseIntensity','Noise Intensity',p.noiseIntensity,0,100,1)}
-    ${sliderCtrl('curveDist','Curve Distortion',p.curveDist,0,100,1)}
-    ${sliderCtrl('detail','Detail',p.detail,1,8,1)}
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Depth & Light</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('depth','Depth',p.depth,0,100,1)}
-    ${sliderCtrl('highlights','Highlights',p.highlights,0,100,1)}
-    ${sliderCtrl('shadows','Shadows',p.shadows,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Grain & Adjustments</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('grain','Grain Amount',p.grain,0,40,1)}
-    ${sliderCtrl('brightness','Brightness',p.brightness,-100,100,1)}
-    ${sliderCtrl('contrast','Contrast',p.contrast,50,200,1)}
-    ${sliderCtrl('saturation','Saturation',p.saturation,0,200,1)}
-  </div>
-</div>`,
+  // Colors
+  sc.querySelectorAll('input[type=color]').forEach(el => {
+    el.addEventListener('input', () => {
+      p[el.id] = el.value;
+      el.closest('.color-swatch').style.background = el.value;
+      // Update stops for gradients tool
+      if (tool === 'gradients' && el.id.startsWith('gc')) {
+        const idx = parseInt(el.id.slice(2));
+        if (p.stops[idx]) p.stops[idx][1] = el.value;
+      }
+      // Update noise stops
+      if (tool === 'noise') {
+        p.stops = [[0, p.c1||'#050505'],[0.5,'#003a0f'],[1, p.c2||'#00ff41']];
+      }
+      schedRender();
+    });
+  });
 
-      lines: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Shape</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${selectCtrl('shape','Shape',['Horizontal Lines','Vertical Lines','Sine Waves','Zigzag','Diagonal','Concentric','Radial','Spiral','Grid'],p.shape)}
-    ${sliderCtrl('frequency','Frequency',p.frequency,0.001,0.2,0.001)}
-    ${sliderCtrl('amplitude','Amplitude',p.amplitude,0,200,1)}
-    ${sliderCtrl('count','Line Count',p.count,1,200,1)}
-    ${sliderCtrl('spacing','Spacing',p.spacing,0.1,5,0.1)}
-    ${sliderCtrl('padding','Padding',p.padding,0,200,1)}
-    ${sliderCtrl('thickness','Thickness',p.thickness,0.1,20,0.1)}
-    ${sliderCtrl('seed','Seed',p.seed||0,0,9999,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Background</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${toggleCtrl('bgGradient','Gradient BG',p.bgGradient)}
-    ${colorCtrl('bg','Background',p.bg)}
-    ${colorCtrl('bg2','BG Color 2',p.bg2||p.bg)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${toggleCtrl('colorGradient','Gradient Lines',p.colorGradient)}
-    ${colorCtrl('lineColor','Line Color',p.lineColor)}
-    ${colorCtrl('lineColor2','Line Color 2',p.lineColor2||p.lineColor)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Organic Effects</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('wobble','Wobble',p.wobble,0,100,1)}
-    ${sliderCtrl('weightVar','Weight Var',p.weightVar,0,100,1)}
-    ${sliderCtrl('opacityVar','Opacity Var',p.opacityVar,0,100,1)}
-    ${sliderCtrl('rotationJitter','Rotation Jitter',p.rotationJitter,0,45,0.5,'°')}
-    ${sliderCtrl('spacingVar','Spacing Var',p.spacingVar,0,100,1)}
-    ${sliderCtrl('freqVar','Freq Var',p.freqVar,0,100,1)}
-    ${sliderCtrl('colorDrift','Color Drift',p.colorDrift,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Effects</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('noise','Noise',p.noise,0,100,1)}
-    ${sliderCtrl('halftone','Halftone',p.halftone,0,40,1)}
-  </div>
-</div>`,
+  // Toggles
+  sc.querySelectorAll('.tog').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.toggle('on');
+      p[el.id] = el.classList.contains('on');
+      schedRender();
+    });
+  });
 
-      organic: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Background</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">${colorCtrl('bg','Background',p.bg)}</div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Paths</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,99999,1)}
-    ${selectCtrl('pathType','Path Type',['Waves','Filled','Curl','Strand'],p.pathType)}
-    ${sliderCtrl('pathCount','Path Count',p.pathCount,1,200,1)}
-    ${sliderCtrl('lineWeight','Line Weight',p.lineWeight,0.1,80,0.5)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Algorithm</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('amplitude','Amplitude',p.amplitude,1,200,1)}
-    ${sliderCtrl('frequency','Frequency',p.frequency,0.01,0.5,0.001)}
-    ${sliderCtrl('harmonics','Harmonics',p.harmonics,1,8,1)}
-    ${sliderCtrl('variation','Variation',p.variation,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Style</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('wobble','Wobble',p.wobble,0,100,1)}
-    ${sliderCtrl('roughness','Roughness',p.roughness,0,100,1)}
-    ${sliderCtrl('taper','Taper',p.taper,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${selectCtrl('colorMode','Mode',['gradient','random'],p.colorMode)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Effects</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
-  </div>
-</div>`,
+  // Text inputs
+  sc.querySelectorAll('input[type=text]').forEach(el => {
+    el.addEventListener('input', () => { p[el.id] = el.value; schedRender(); });
+  });
 
-      plotter: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Background</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${sliderCtrl('margin','Margin',p.margin||40,0,200,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Pattern</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,99999,1)}
-    ${selectCtrl('type','Type',['Dot Grid','Random','Hexagonal','Diagonal'],p.type)}
-    ${sliderCtrl('columns','Columns',p.columns,2,60,1)}
-    ${sliderCtrl('rows','Rows',p.rows,2,60,1)}
-    ${sliderCtrl('jitter','Jitter',p.jitter,0,1,0.01)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Shape</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${selectCtrl('shape','Shape',['Circle','Square','Triangle','Line','Cross','Diamond','Hexagon'],p.shape)}
-    ${sliderCtrl('minSize','Min Size',p.minSize,1,50,1)}
-    ${sliderCtrl('maxSize','Max Size',p.maxSize,1,100,1)}
-    ${sliderCtrl('strokeWeight','Stroke Weight',p.strokeWeight,0.1,10,0.1)}
-    ${toggleCtrl('filled','Filled',p.filled)}
-    ${sliderCtrl('rotation','Rotation',p.rotation,0,360,1,'°')}
-    ${sliderCtrl('wobble','Organic Wobble',p.wobble,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Noise</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('noiseScale','Scale',p.noiseScale,0.001,0.1,0.001)}
-    ${sliderCtrl('noiseIntensity','Intensity',p.noiseIntensity,0,2,0.05)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${paletteCtrl('palette','Palette',p.palette)}
-    ${sliderCtrl('amount','Grain',p.amount,0,100,1)}
-  </div>
-</div>`,
+  // Number inputs (custom w/h)
+  const cw = document.getElementById('cw'), ch = document.getElementById('ch');
+  if (cw) cw.addEventListener('change', () => { p.w = Math.max(100, Math.min(4096, parseInt(cw.value)||800)); schedRender(); });
+  if (ch) ch.addEventListener('change', () => { p.h = Math.max(100, Math.min(4096, parseInt(ch.value)||800)); schedRender(); });
 
-      topo: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Terrain</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,99999,1)}
-    ${sliderCtrl('levels','Contour Levels',p.levels,2,60,1)}
-    ${sliderCtrl('noiseScale','Noise Scale',p.noiseScale,0.001,0.05,0.001)}
-    ${sliderCtrl('octaves','Octaves',p.octaves,1,8,1)}
-    ${sliderCtrl('falloff','Falloff',p.falloff,0.1,2,0.05)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Stroke</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('strokeWeight','Weight',p.strokeWeight,0.1,10,0.1)}
-    ${sliderCtrl('wobble','Wobble',p.wobble,0,50,1)}
-    ${sliderCtrl('smoothing','Smoothing',p.smoothing,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${selectCtrl('mode','Mode',['Single','Gradient','Rainbow'],p.mode)}
-    ${colorCtrl('lineColor','Line Color',p.lineColor)}
-    ${sliderCtrl('opacity','Opacity',p.opacity,10,100,1,'%')}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Effects</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
-    ${sliderCtrl('margin','Margin',p.margin,0,100,1)}
-  </div>
-</div>`,
+  // Size pills
+  sc.querySelectorAll('.size-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const [w, h] = GS.SIZES[pill.dataset.size] || [800, 800];
+      p.w = w; p.h = h;
+      sc.querySelectorAll('.size-pill').forEach(pp => pp.classList.remove('active'));
+      pill.classList.add('active');
+      if (cw) cw.value = w;
+      if (ch) ch.value = h;
+      schedRender();
+    });
+  });
 
-      marble: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Colors</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('main','Main',p.main)} ${colorCtrl('low','Low',p.low)}
-    ${colorCtrl('mid','Mid',p.mid)} ${colorCtrl('high','High',p.high)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Fluid</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('noiseScale','Noise Scale',p.noiseScale,0.1,10,0.1)}
-    ${sliderCtrl('wind','Wind Speed',p.wind,0,5,0.1)}
-    ${sliderCtrl('warp','Warp',p.warp,0,5,0.1)}
-    ${sliderCtrl('strength','Strength',p.strength,0.1,5,0.1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">FBM</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('fbmStrength','Strength',p.fbmStrength,0,3,0.05)}
-    ${sliderCtrl('fbmDamping','Damping',p.fbmDamping,0,3,0.05)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Texture</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">${sliderCtrl('grain','Grain',p.grain,0,50,1)}</div>
-</div>`,
+  // Image uploads
+  bindUpload('ascii-file', 'ascii-zone');
+  bindUpload('dither-file', 'dither-zone');
+  bindUpload('ps-file', 'ps-zone');
 
-      ascii: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Source</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    <div class="upload-zone" id="ascii-upload-zone">
-      <input type="file" id="ascii-file" accept="image/*">
-      <div>📁 Load Image</div><div style="font-size:10px;margin-top:4px;color:var(--text3)">or drag &amp; drop</div>
-    </div>
-    <button class="btn btn-ghost btn-sm" id="ascii-clear">Clear Image</button>
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Characters</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${selectCtrl('charSet','Character Set',['Standard','Dense','Blocks','Binary','Braille'],p.charSet)}
-    ${toggleCtrl('matchColors','Match Image Colors',p.matchColors)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Rendering</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('fontSize','Font Size',p.fontSize,4,24,1)}
-    ${sliderCtrl('letterSpacing','Letter Spacing',p.letterSpacing,0,10,0.5)}
-    ${sliderCtrl('lineHeight','Line Height',p.lineHeight,0.5,3,0.1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${colorCtrl('color','Text Color',p.color||'#ffffff')}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Adjustments</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('contrast','Contrast',p.contrast,50,200,1)}
-    ${sliderCtrl('brightness','Brightness',p.brightness,-100,100,1)}
-    ${toggleCtrl('invert','Invert',p.invert)}
-  </div>
-</div>`,
+  // ASCII clear
+  document.getElementById('ascii-clear')?.addEventListener('click', () => {
+    loadedImage = null; schedRender();
+  });
+}
 
-      dither: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Source</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    <div class="upload-zone" id="dither-upload-zone">
-      <input type="file" id="dither-file" accept="image/*">
-      <div>📁 Load Image</div>
-    </div>
-    ${selectCtrl('source','Source',['Gradient','Noise','Image'],p.source)}
-    ${selectCtrl('type','Type',['Noise','Gradient','Plasma'],p.type)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Pattern</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${selectCtrl('pattern','Pattern',['Bayer 4x4','Bayer 8x8','Floyd-Steinberg','Ordered'],p.pattern)}
-    ${selectCtrl('style','Dither Style',['Threshold','Diffusion'],p.style)}
-    ${selectCtrl('shape','Shape',['Square','Circle','Diamond'],p.shape)}
-    ${sliderCtrl('cellSize','Cell Size',p.cellSize,1,20,1,'px')}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Palette</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">${paletteCtrl('palette','Palette',p.palette)}</div>
-</div>`,
-
-      noise: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Noise</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-    ${sliderCtrl('scale','Scale',p.scale,0.5,20,0.1)}
-    ${sliderCtrl('octaves','Octaves',p.octaves,1,8,1)}
-    ${sliderCtrl('warp','Domain Warp',p.warp,0,2,0.05)}
-    ${sliderCtrl('terraces','Terraces',p.terraces,2,20,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Style</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${toggleCtrl('ridged','Ridged',p.ridged)}
-    ${toggleCtrl('terraced','Terraced',p.terraced)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Colors</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('c1','Color 1',p.c1)} ${colorCtrl('c2','Color 2',p.c2)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Effects</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">${sliderCtrl('grain','Grain',p.grain,0,100,1)}</div>
-</div>`,
-
-      circles: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Type</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-    ${selectCtrl('type','Type',['Concentric','Random Bubble','Grid'],p.type)}
-    ${sliderCtrl('count','Count',p.count,3,500,1)}
-    ${sliderCtrl('cx','Center X',p.cx,0,100,1,'%')}
-    ${sliderCtrl('cy','Center Y',p.cy,0,100,1,'%')}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Size</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('minR','Min Radius',p.minR,1,200,1)}
-    ${sliderCtrl('maxR','Max Radius',p.maxR,1,400,1)}
-    ${sliderCtrl('stroke','Stroke',p.stroke,0,10,0.5)}
-    ${toggleCtrl('filled','Filled',p.filled)}
-    ${toggleCtrl('pack','Pack (no overlap)',p.pack)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${paletteCtrl('palette','Palette',p.palette)}
-    ${colorCtrl('lineColor','Line Color',p.lineColor)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Effects</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">${sliderCtrl('grain','Grain',p.grain,0,100,1)}</div>
-</div>`,
-
-      typography: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Text</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    <div class="ctrl"><div class="ctrl-label"><span class="ctrl-name">Text</span></div>
-      <input type="text" id="text" value="${p.text||'GENSTUDIO'}">
-    </div>
-    ${selectCtrl('type','Layout',['Scatter','Stack','Path'],p.type)}
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Font</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${selectCtrl('font','Font',['JetBrains Mono','Space Grotesk','Georgia','Arial Black','Courier New','Impact'],p.font)}
-    ${selectCtrl('weight','Weight',['100','300','400','700','900','bold'],p.weight)}
-    ${sliderCtrl('minSize','Min Size',p.minSize,4,200,1)}
-    ${sliderCtrl('maxSize','Max Size',p.maxSize,4,400,1)}
-    ${sliderCtrl('spacing','Spacing',p.spacing,0,20,0.5)}
-    ${sliderCtrl('lineHeight','Line Height',p.lineHeight,0.5,3,0.1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Transform</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('count','Count',p.count,10,1000,10)}
-    ${sliderCtrl('rotation','Rotation Range',p.rotation,0,360,1,'°')}
-    ${sliderCtrl('glow','Glow',p.glow,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${paletteCtrl('palette','Palette',p.palette)}
-    ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
-  </div>
-</div>`,
-
-      waves: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Wave</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-    ${sliderCtrl('layers','Layers',p.layers,1,40,1)}
-    ${sliderCtrl('amplitude','Amplitude',p.amplitude,0,300,1)}
-    ${sliderCtrl('frequency','Frequency',p.frequency,0.5,20,0.1)}
-    ${sliderCtrl('harmonics','Harmonics',p.harmonics,1,10,0.5)}
-    ${sliderCtrl('phase','Phase',p.phase,0,360,1,'°')}
-    ${sliderCtrl('offset','Y Offset',p.offset,-50,100,1,'%')}
-    ${sliderCtrl('noise','Noise',p.noise,0,1,0.01)}
-    ${sliderCtrl('opacity','Opacity',p.opacity,10,100,1,'%')}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Effects</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">${sliderCtrl('grain','Grain',p.grain,0,100,1)}</div>
-</div>`,
-
-      voronoi: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Points</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-    ${sliderCtrl('count','Point Count',p.count,5,200,1)}
-    ${selectCtrl('metric','Distance Metric',['Euclidean','Manhattan','Chebyshev'],p.metric)}
-    ${toggleCtrl('relaxed','Relaxed (Lloyd)',p.relaxed)}
-    ${sliderCtrl('relaxation','Relaxation',p.relaxation,0,100,1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${paletteCtrl('palette','Palette',p.palette)}
-    ${toggleCtrl('drawEdges','Draw Edges',p.drawEdges)}
-    ${colorCtrl('edgeColor','Edge Color',p.edgeColor||'#0a0a0f')}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Effects</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">${sliderCtrl('grain','Grain',p.grain,0,100,1)}</div>
-</div>`,
-
-      fractal: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Type</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${selectCtrl('type','Fractal Type',['Mandelbrot','Julia','Burning Ship'],p.type)}
-    ${sliderCtrl('iterations','Iterations',p.iterations,20,500,10)}
-    ${sliderCtrl('zoom','Zoom',p.zoom,0.1,100,0.1)}
-    ${sliderCtrl('cx','Center X',p.cx,-3,3,0.01)}
-    ${sliderCtrl('cy','Center Y',p.cy,-2,2,0.01)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Julia Parameters</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('juliaC','Julia C Real',p.juliaC,-2,2,0.01)}
-    ${sliderCtrl('juliaCi','Julia C Imag',p.juliaCi,-2,2,0.01)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${paletteCtrl('palette','Palette',p.palette)}
-    ${sliderCtrl('colorCycles','Color Cycles',p.colorCycles,0,10,0.5)}
-  </div>
-</div>`,
-
-      pixelSort: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Source</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    <div class="upload-zone" id="ps-upload-zone">
-      <input type="file" id="ps-file" accept="image/*">
-      <div>📁 Load Image</div>
-    </div>
-    ${selectCtrl('palette','Base Palette',Object.keys(GS.PALETTES),p.palette)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Sort</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${selectCtrl('direction','Direction',['Horizontal','Vertical','Both','Diagonal'],p.direction)}
-    ${sliderCtrl('threshold','Threshold',p.threshold,0,100,1,'%')}
-    ${selectCtrl('sortBy','Sort By',['Brightness','Hue','Saturation'],p.sortBy)}
-  </div>
-</div>`,
-
-      truchet: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Tile</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-    ${selectCtrl('type','Tile Type',['Classic','Diagonal','SquareCurve','Triangle'],p.type)}
-    ${sliderCtrl('tileSize','Tile Size',p.tileSize,10,120,5)}
-    ${sliderCtrl('stroke','Stroke',p.stroke,0.5,10,0.5)}
-    ${toggleCtrl('twoColor','Two Color',p.twoColor)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${paletteCtrl('palette','Palette',p.palette)}
-    ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
-  </div>
-</div>`,
-
-      crystal: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Grid</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-    ${sliderCtrl('cols','Columns',p.cols,4,40,1)}
-    ${sliderCtrl('rows','Rows',p.rows,4,40,1)}
-    ${sliderCtrl('jitter','Jitter',p.jitter,0,100,1,'%')}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${paletteCtrl('palette','Palette',p.palette)}
-    ${colorCtrl('lineColor','Edge Color',p.lineColor||'rgba(0,0,0,0.15)')}
-    ${sliderCtrl('stroke','Edge Weight',p.stroke,0,5,0.5)}
-    ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
-  </div>
-</div>`,
-
-      spirograph: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Parameters</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('R','Outer Radius (R)',p.R,50,600,5)}
-    ${sliderCtrl('r','Inner Radius (r)',p.r,5,400,5)}
-    ${sliderCtrl('d','Pen Offset (d)',p.d,0,400,5)}
-    ${sliderCtrl('loops','Loops',p.loops,1,50,1)}
-    ${sliderCtrl('steps','Resolution',p.steps,500,10000,100)}
-    ${sliderCtrl('stroke','Stroke Weight',p.stroke,0.1,10,0.1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${colorCtrl('c1','Color Start',p.c1||'#7c5cfc')}
-    ${colorCtrl('c2','Color End',p.c2||'#f5d0fe')}
-    ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
-  </div>
-</div>`,
-
-      flowField: `
-${canvasSection}
-<div class="section">
-  <div class="section-header"><span class="section-title">Particles</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('seed','Seed',p.seed,0,9999,1)}
-    ${sliderCtrl('count','Particle Count',p.count,50,5000,50)}
-    ${sliderCtrl('life','Lifespan',p.life,10,300,5)}
-    ${sliderCtrl('steps','Steps',p.steps,50,500,10)}
-    ${sliderCtrl('speed','Speed',p.speed,0.5,10,0.5)}
-    ${sliderCtrl('weight','Line Weight',p.weight,0.1,5,0.1)}
-    ${sliderCtrl('opacity','Opacity',p.opacity,5,100,1,'%')}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Field</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${sliderCtrl('scale','Field Scale',p.scale,0.5,15,0.5)}
-    ${sliderCtrl('octaves','Octaves',p.octaves,1,6,1)}
-    ${sliderCtrl('curl','Curl',p.curl,0.1,5,0.1)}
-  </div>
-</div>
-<div class="section">
-  <div class="section-header"><span class="section-title">Color</span><span class="section-toggle">▾</span></div>
-  <div class="section-body">
-    ${colorCtrl('bg','Background',p.bg)}
-    ${paletteCtrl('palette','Palette',p.palette)}
-    ${sliderCtrl('grain','Grain',p.grain,0,100,1)}
-  </div>
-</div>`,
+function bindUpload(inputId, zoneId) {
+  const inp = document.getElementById(inputId);
+  const zone = document.getElementById(zoneId);
+  if (!inp) return;
+  const handle = file => {
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = e => {
+      const img = new Image();
+      img.onload = () => { loadedImage = img; schedRender(); };
+      img.src = e.target.result;
     };
-    return panels[tool]||`<div class="section"><div class="section-body"><p style="color:var(--text3);font-size:11px">No controls for this tool.</p></div></div>`;
-  }
-
-  // ── HTML helpers ─────────────────────────────────────────────
-  function sliderCtrl(id,name,val,min,max,step,suffix=''){
-    return `<div class="ctrl"><div class="ctrl-label"><span class="ctrl-name">${name}</span><span class="ctrl-val" id="${id}-val">${val}${suffix}</span></div>
-<input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"></div>`;
-  }
-  function selectCtrl(id,name,opts,val){
-    return `<div class="ctrl"><div class="ctrl-label"><span class="ctrl-name">${name}</span></div>
-<select id="${id}">${opts.map(o=>`<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`;
-  }
-  function colorCtrl(id,name,val){
-    return `<div class="ctrl toggle-row"><span class="ctrl-name">${name}</span>
-<div class="color-swatch" style="background:${val||'#000000'}"><input type="color" id="${id}" value="${val||'#000000'}"></div></div>`;
-  }
-  function toggleCtrl(id,name,val){
-    return `<div class="toggle-row"><span class="toggle-label">${name}</span><button class="toggle${val?' on':''}" id="${id}"></button></div>`;
-  }
-
-  function paletteCtrl(id, name, valArray) {
-    if (typeof valArray === 'string') valArray = GS.getPalette(valArray);
-    if (!Array.isArray(valArray)) valArray = ['#ffffff', '#000000'];
-    let html = `<div class="ctrl"><div class="ctrl-label"><span class="ctrl-name">${name}</span></div><div class="color-row palette-container" id="${id}-container" data-id="${id}">`;
-    valArray.forEach((c, idx) => {
-      let color = c;
-      if (Array.isArray(c)) color = c[1];
-      html += `<div class="color-swatch" style="background:${color}"><input type="color" class="palette-color-input" data-idx="${idx}" value="${color}"></div>`;
+    r.readAsDataURL(file);
+  };
+  inp.addEventListener('change', () => handle(inp.files[0]));
+  if (zone) {
+    zone.addEventListener('click', () => inp.click());
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--green)'; });
+    zone.addEventListener('dragleave', () => zone.style.borderColor = '');
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.style.borderColor = '';
+      handle(e.dataTransfer.files[0]);
     });
-    html += `<button class="btn btn-icon btn-ghost add-color-btn" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;">+</button>`;
-    html += `<button class="btn btn-icon btn-ghost remove-color-btn" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;">&times;</button>`;
-    html += `</div></div>`;
-    return html;
   }
+}
 
-  // ── Switch tool ──────────────────────────────────────────────
-  function switchTool(toolId) {
-    if(!TOOLS[toolId])return;
-    currentTool=toolId;
-    // update nav
-    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-    const ni=document.querySelector(`.nav-item[data-tool="${toolId}"]`);
-    if(ni)ni.classList.add('active');
-    // update header title
-    const tt=document.getElementById('tool-title');
-    if(tt)tt.textContent=TOOLS[toolId].name;
-    // rebuild sidebar
-    const sidebar=document.getElementById('sidebar-controls');
-    if(sidebar){
-      sidebar.innerHTML=makeSidebarHTML(toolId);
-      GS.initSections(sidebar);
-      bindControls(toolId);
+// ── Render ────────────────────────────────────────────────────
+function schedRender(delay=80) {
+  if (renderTimer) clearTimeout(renderTimer);
+  renderTimer = setTimeout(doRender, delay);
+}
+
+function doRender() {
+  const tool = TOOLS[current];
+  const p = params[current];
+  if (!tool || !canvas) return;
+
+  // Resize canvas if needed
+  const w = p.w || 800, h = p.h || 800;
+  if (canvas.width !== w) canvas.width = w;
+  if (canvas.height !== h) canvas.height = h;
+
+  try {
+    // Update noise stops when colors change
+    if (current === 'noise') {
+      p.stops = [[0, p.c1||'#050505'],[0.5,'#003a0f'],[1, p.c2||'#00ff41']];
     }
-    scheduleRender();
-  }
-
-  // ── Bind sidebar controls to params ──────────────────────────
-  function bindControls(tool) {
-    const p=params[tool];
-    // Auto-bind all range inputs
-    document.querySelectorAll('#sidebar-controls input[type=range]').forEach(el=>{
-      const key=el.id;
-      const valEl=document.getElementById(key+'-val');
-      el.addEventListener('input',()=>{
-        const v=parseFloat(el.value);
-        p[key]=v;
-        if(valEl)valEl.textContent=el.value+(el.dataset.suffix||'');
-        scheduleRender();
-      });
-    });
-    // Auto-bind selects
-    document.querySelectorAll('#sidebar-controls select').forEach(el=>{
-      el.addEventListener('change',()=>{ p[el.id]=el.value; scheduleRender(); });
-    });
-    // Auto-bind color inputs
-    document.querySelectorAll('#sidebar-controls input[type=color]').forEach(el=>{
-      if (el.classList.contains('palette-color-input')) return; // handled separately
-      el.addEventListener('input',()=>{
-        p[el.id]=el.value;
-        el.closest('.color-swatch').style.background=el.value;
-        scheduleRender();
-      });
-    });
-
-    // Auto-bind dynamic palettes
-    document.querySelectorAll('#sidebar-controls .palette-container').forEach(container => {
-      const pid = container.dataset.id;
-
-      // Coerce to array if it is a string palette name
-      if (typeof p[pid] === 'string') {
-        p[pid] = GS.getPalette(p[pid]);
-      } else if (!p[pid]) {
-        p[pid] = ['#ffffff', '#000000'];
-      }
-
-      const updateBinding = () => {
-        container.querySelectorAll('.palette-color-input').forEach(el => {
-          el.addEventListener('input', () => {
-            const idx = parseInt(el.dataset.idx);
-            if (Array.isArray(p[pid][idx])) {
-              p[pid][idx][1] = el.value;
-            } else {
-              p[pid][idx] = el.value;
-            }
-            el.closest('.color-swatch').style.background = el.value;
-            scheduleRender();
-          });
-        });
-      };
-
-      container.querySelector('.add-color-btn')?.addEventListener('click', () => {
-        const isStops = p[pid].length > 0 && Array.isArray(p[pid][0]);
-        if (isStops) {
-          p[pid].push([1, '#ffffff']);
-          p[pid].forEach((stop, i) => stop[0] = i / (p[pid].length - 1 || 1));
-        } else {
-          p[pid].push('#ffffff');
-        }
-        switchTool(currentTool);
-      });
-
-      container.querySelector('.remove-color-btn')?.addEventListener('click', () => {
-        if (p[pid].length > 2) {
-          p[pid].pop();
-          const isStops = p[pid].length > 0 && Array.isArray(p[pid][0]);
-          if (isStops) {
-             p[pid].forEach((stop, i) => stop[0] = i / (p[pid].length - 1 || 1));
-          }
-          switchTool(currentTool);
-        }
-      });
-
-      updateBinding();
-    });
-    // Auto-bind toggles
-    document.querySelectorAll('#sidebar-controls .toggle').forEach(el=>{
-      el.addEventListener('click',()=>{
-        el.classList.toggle('on');
-        p[el.id]=el.classList.contains('on');
-        scheduleRender();
-      });
-    });
-    // Auto-bind text
-    document.querySelectorAll('#sidebar-controls input[type=text]').forEach(el=>{
-      el.addEventListener('input',()=>{ p[el.id]=el.value; scheduleRender(); });
-    });
-    // Canvas size
-    const sizeSel=document.getElementById('size-select');
-    const customRow=document.getElementById('custom-size-row');
-    if(sizeSel){
-      sizeSel.addEventListener('change',()=>{
-        if(sizeSel.value==='Custom'){customRow&&(customRow.style.display='flex');}
-        else{
-          customRow&&(customRow.style.display='none');
-          const [w,h]=GS.SIZES[sizeSel.value]||[800,800];
-          p.w=w; p.h=h; scheduleRender();
-        }
-      });
+    if (current === 'waves') {
+      p.stops = [[0, p.c1||'#0e4d68'],[0.5,'#1a9e8c'],[1, p.c2||'#64dfb8']];
     }
-    const cw=document.getElementById('custom-w'), ch2=document.getElementById('custom-h');
-    if(cw)cw.addEventListener('change',()=>{p.w=parseInt(cw.value)||800;scheduleRender();});
-    if(ch2)ch2.addEventListener('change',()=>{p.h=parseInt(ch2.value)||800;scheduleRender();});
-    // Image uploads
-    bindImageUpload('ascii-file','ascii-upload-zone');
-    bindImageUpload('dither-file','dither-upload-zone');
-    bindImageUpload('ps-file','ps-upload-zone');
-    // ASCII clear
-    const aclr=document.getElementById('ascii-clear');
-    if(aclr)aclr.addEventListener('click',()=>{loadedImage=null;scheduleRender();});
+    tool.render(canvas, ctx, p, loadedImage);
+  } catch(e) {
+    console.error('[GenStudio] Render error in', current, ':', e);
+    // Show error on canvas
+    ctx.fillStyle = '#050505'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#ff3333'; ctx.font = '12px IBM Plex Mono';
+    ctx.fillText('RENDER ERROR: ' + e.message, 20, 40);
   }
 
-  function bindImageUpload(inputId, zoneId) {
-    const inp=document.getElementById(inputId);
-    const zone=document.getElementById(zoneId);
-    if(!inp)return;
-    inp.addEventListener('change',()=>{
-      const file=inp.files[0]; if(!file)return;
-      const reader=new FileReader();
-      reader.onload=(e)=>{const img=new Image();img.onload=()=>{loadedImage=img;scheduleRender();};img.src=e.target.result;};
-      reader.readAsDataURL(file);
-    });
-    if(zone){
-      zone.addEventListener('click',()=>inp.click());
-      zone.addEventListener('dragover',e=>{e.preventDefault();zone.style.borderColor='var(--accent)';});
-      zone.addEventListener('dragleave',()=>zone.style.borderColor='');
-      zone.addEventListener('drop',e=>{
-        e.preventDefault(); zone.style.borderColor='';
-        const file=e.dataTransfer.files[0]; if(!file)return;
-        const reader=new FileReader();
-        reader.onload=(ev)=>{const img=new Image();img.onload=()=>{loadedImage=img;scheduleRender();};img.src=ev.target.result;};
-        reader.readAsDataURL(file);
-      });
+  // Update status
+  const stat = document.getElementById('status-text');
+  if (stat) stat.textContent = `${current.toUpperCase()} · ${w}×${h}`;
+}
+
+// ── Randomize ─────────────────────────────────────────────────
+function randomize() {
+  const p = params[current];
+  const rng = Math.random;
+  if ('seed' in p) p.seed = Math.floor(rng() * 99999);
+  if ('palette' in p) p.palette = GS.randPalette(rng);
+  // Re-init sidebar to reflect new values
+  switchTool(current);
+  GS.toast('Randomized');
+}
+
+// ── Init ──────────────────────────────────────────────────────
+function init() {
+  canvas = document.getElementById('main-canvas');
+  ctx = canvas.getContext('2d');
+
+  // Build nav
+  const nav = document.getElementById('tool-nav');
+  TOOL_ORDER.forEach((id, i) => {
+    if (!TOOLS[id]) return;
+    if (i === 7 || i === 14) {
+      const sep = document.createElement('div');
+      sep.className = 'nav-sep'; nav.appendChild(sep);
     }
-  }
+    const btn = document.createElement('button');
+    btn.className = 'nav-item'; btn.dataset.tool = id;
+    btn.innerHTML = `${TOOLS[id].icon}<span class="tip">${TOOLS[id].name}</span>`;
+    btn.addEventListener('click', () => switchTool(id));
+    nav.appendChild(btn);
+  });
 
-  // ── Render ────────────────────────────────────────────────────
-  function scheduleRender() {
-    if(renderTimeout)clearTimeout(renderTimeout);
-    renderTimeout=setTimeout(()=>render(),60);
-  }
+  // Header buttons
+  document.getElementById('btn-random')?.addEventListener('click', randomize);
+  document.getElementById('btn-png')?.addEventListener('click', () => GS.exportPNG(canvas, current));
+  document.getElementById('btn-jpg')?.addEventListener('click', () => GS.exportJPG(canvas, current));
+  document.getElementById('btn-svg')?.addEventListener('click', () => GS.exportSVG(canvas, current));
+  document.getElementById('btn-reset')?.addEventListener('click', () => {
+    resetParams(current); switchTool(current); GS.toast('Reset');
+  });
 
-  function render() {
-    if(isRendering)return;
-    isRendering=true;
-    const p=params[currentTool];
-    const tool=TOOLS[currentTool];
-    if(!tool){isRendering=false;return;}
-    // Resize canvas
-    if(canvas.width!==p.w||canvas.height!==p.h){
-      canvas.width=p.w||800; canvas.height=p.h||800;
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); GS.exportPNG(canvas, current); }
+    if ((e.ctrlKey||e.metaKey) && e.key==='r') { e.preventDefault(); randomize(); }
+  });
+
+  // Boot animation
+  const fill = document.getElementById('boot-fill');
+  const loading = document.getElementById('loading');
+  let pct = 0;
+  const interval = setInterval(() => {
+    pct += 12 + Math.random() * 15;
+    if (fill) fill.style.width = Math.min(100, pct) + '%';
+    if (pct >= 100) {
+      clearInterval(interval);
+      setTimeout(() => {
+        if (loading) loading.classList.add('hide');
+        switchTool('blocks');
+      }, 250);
     }
-    try{
-      tool.render(canvas,ctx,p,loadedImage);
-    }catch(e){console.error('Render error:',currentTool,e);}
-    isRendering=false;
-  }
+  }, 80);
+}
 
-  // ── Init ─────────────────────────────────────────────────────
-  function init() {
-    canvas=document.getElementById('main-canvas');
-    ctx=canvas.getContext('2d');
-    // Build nav
-    const nav=document.getElementById('tool-nav');
-    if(nav){
-      toolOrder.forEach(id=>{
-        if(!TOOLS[id])return;
-        const btn=document.createElement('button');
-        btn.className='nav-item'; btn.dataset.tool=id;
-        btn.innerHTML=`<span>${TOOLS[id].icon}</span><span class="tooltip">${TOOLS[id].name}</span>`;
-        btn.addEventListener('click',()=>switchTool(id));
-        nav.appendChild(btn);
-      });
-    }
-    // Randomize button
-    document.getElementById('btn-randomize')?.addEventListener('click',()=>{
-      const p=params[currentTool];
-      if(typeof p.seed!=='undefined') p.seed=Math.floor(Math.random()*99999);
-      if(typeof p.palette!=='undefined') {
-        const num = 2 + Math.floor(Math.random() * 4);
-        p.palette = Array.from({length: num}, () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'));
-      }
-      switchTool(currentTool);
-    });
-    // Export buttons
-    document.getElementById('btn-png')?.addEventListener('click',()=>GS.exportPNG(canvas,currentTool));
-    document.getElementById('btn-jpg')?.addEventListener('click',()=>GS.exportJPG(canvas,currentTool));
-    document.getElementById('btn-svg')?.addEventListener('click',()=>{
-      // fallback — wrap canvas as PNG in SVG
-      const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-      svg.setAttribute('width',canvas.width); svg.setAttribute('height',canvas.height);
-      const img=document.createElementNS('http://www.w3.org/2000/svg','image');
-      img.setAttribute('href',canvas.toDataURL());
-      img.setAttribute('width',canvas.width); img.setAttribute('height',canvas.height);
-      svg.appendChild(img); GS.exportSVG(svg,currentTool);
-    });
-    // Keyboard shortcuts
-    document.addEventListener('keydown',e=>{
-      if(e.ctrlKey||e.metaKey){
-        if(e.key==='s'){e.preventDefault();GS.exportPNG(canvas,currentTool);}
-        if(e.key==='r'){e.preventDefault();document.getElementById('btn-randomize')?.click();}
-      }
-    });
-    // Start with blocks
-    switchTool('blocks');
-    // Hide loading
-    const lo=document.getElementById('loading-overlay');
-    if(lo){lo.querySelector('.loading-fill').style.width='100%';setTimeout(()=>lo.classList.add('hidden'),400);}
-  }
-
-  return {init};
+return { init };
 })();
 
-window.addEventListener('DOMContentLoaded',()=>App.init());
+window.addEventListener('DOMContentLoaded', () => App.init());

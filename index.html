@@ -2,56 +2,129 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>GenStudio — Generative Design Tools</title>
+<meta name="description" content="20 browser-based generative art tools. Noise, gradients, flow fields, fractals, ASCII, marble, topo, dither and more. Free, no install required.">
+<meta name="theme-color" content="#000000">
+<meta property="og:title" content="GenStudio">
+<meta property="og:description" content="20 generative art tools in your browser.">
+<meta property="og:type" content="website">
+
 <link rel="stylesheet" href="css/main.css">
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- AdSense — replace publisher ID -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 </head>
 <body>
 
-<!-- Loading overlay -->
-<div id="loading-overlay">
-  <div style="font-size:18px;font-weight:700;letter-spacing:-0.5px;color:var(--text)">Gen<span style="color:var(--accent2)">Studio</span></div>
-  <div class="loading-bar"><div class="loading-fill" id="load-fill"></div></div>
-  <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">Loading tools…</div>
+<!-- ── Boot screen ── -->
+<div id="loading">
+  <div class="boot-logo">GenStudio</div>
+  <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+  <div class="boot-text">INITIALIZING 20 TOOLS…</div>
 </div>
 
-<!-- Main layout -->
+<!-- ── Header ── -->
+<header id="header">
+  <div class="header-left">
+    <div class="logo-block">
+      <div class="logo">Gen<wbr>Studio<sup>β</sup></div>
+    </div>
+    <div class="hdr-stat" id="tool-name"><span>—</span></div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" id="btn-reset" title="Reset to defaults">RESET</button>
+    <button class="btn btn-ghost btn-sm" id="btn-random" title="Randomize (Ctrl+R)">🎲 RNG</button>
+    <div style="width:1px;height:20px;background:var(--border)"></div>
+    <button class="btn btn-ghost btn-sm" id="btn-jpg">JPG</button>
+    <button class="btn btn-ghost btn-sm" id="btn-png">PNG</button>
+    <button class="btn btn-green btn-sm" id="btn-svg">SVG</button>
+  </div>
+</header>
+
+<!-- ── Main layout ── -->
 <div id="layout">
 
-  <!-- Tool nav icons -->
+  <!-- Tool nav -->
   <nav id="tool-nav"></nav>
 
   <!-- Sidebar -->
   <aside id="sidebar">
-    <div class="sidebar-header">
-      <h2 id="tool-title" style="margin:0; font-size: 16px; font-weight: normal; color: var(--text);">Blocks</h2>
+    <!-- AdSense sidebar unit -->
+    <div class="ad-slot" id="ad-side">
+      <ins class="adsbygoogle"
+        style="display:block;width:248px;height:90px"
+        data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+        data-ad-slot="0000000001"
+        data-ad-format="auto"
+        data-full-width-responsive="false"></ins>
+      <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
     </div>
-    <!-- Controls injected here -->
-    <div id="sidebar-controls"></div>
-    <div class="sidebar-actions">
-      <button class="btn btn-ghost" id="btn-randomize" title="Randomize (Ctrl+R)">Randomize <kbd>R</kbd></button>
-      <button class="btn btn-ghost" id="btn-reset">Reset <kbd>⌫</kbd></button>
-      <button class="btn btn-primary" id="btn-png">Export PNG <kbd>⌘S</kbd></button>
-      <button class="btn btn-ghost" id="btn-svg">Export SVG</button>
-      <button class="btn btn-ghost" id="btn-jpg" style="display:none;">Export JPG</button>
+    <!-- Controls -->
+    <div id="sidebar-content"></div>
+    <!-- Footer actions -->
+    <div class="side-footer">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-png').click()">↓ PNG</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-jpg').click()">↓ JPG</button>
+      <button class="btn btn-green btn-sm" onclick="document.getElementById('btn-svg').click()">↓ SVG</button>
     </div>
   </aside>
 
   <!-- Canvas area -->
   <main id="canvas-area">
-    <div id="canvas-wrapper">
+    <!-- Corner decorations -->
+    <div class="canvas-corner cc-tl"></div>
+    <div class="canvas-corner cc-tr"></div>
+    <div class="canvas-corner cc-bl"></div>
+    <div class="canvas-corner cc-br"></div>
+
+    <!-- Render indicator -->
+    <div id="render-indicator">
+      <div class="spin-ring"></div>
+      <div class="spin-label">Rendering</div>
+    </div>
+
+    <div id="canvas-wrap">
       <canvas id="main-canvas" width="800" height="800"></canvas>
+    </div>
+
+    <!-- Bottom bar -->
+    <div id="bottom-bar">
+      <div class="status-indicator">
+        <div class="dot"></div>
+        <span id="status-text">READY</span>
+      </div>
+      <div class="bar-divider"></div>
+      <span style="font-size:9px;color:var(--text4);letter-spacing:1px">
+        <span class="kbd">Ctrl+S</span> save &nbsp;
+        <span class="kbd">Ctrl+R</span> randomize
+      </span>
+      <div class="bar-divider"></div>
+      <!-- AdSense leaderboard -->
+      <div id="ad-bottom">
+        <ins class="adsbygoogle"
+          style="display:block;width:100%;height:28px"
+          data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+          data-ad-slot="0000000002"
+          data-ad-format="auto"></ins>
+        <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+      </div>
     </div>
   </main>
 
 </div>
 
 <!-- Toast container -->
-<div id="toast-container"></div>
+<div id="toasts"></div>
 
 <!-- Scripts -->
 <script src="js/core.js"></script>
 <script src="js/tools.js"></script>
 <script src="js/app.js"></script>
+
 </body>
 </html>

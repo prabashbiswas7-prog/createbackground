@@ -6,7 +6,7 @@
   --text-main: #f0f0f0;
   --text-muted: #888888;
   --text-dark: #555555;
-  --font-main: "Google Sans", sans-serif;
+  --font-main: "Google Sans", "Open Sans", sans-serif;
   --font-mono: var(--font-main);
 
   --black:   #000000;
@@ -377,3 +377,127 @@ input[type=text]:focus, input[type=number]:focus { border-color: var(--text-mute
   margin-bottom: 10px;
 }
 .upload-zone:hover { border-color: var(--accent-green); color: var(--accent-green); background: rgba(51,255,102,0.05); }
+
+
+/* Fixes for injected tools */
+#tool-nav {
+  padding: 0 10px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-main);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+.nav-item:hover {
+  background-color: rgba(255,255,255,0.05);
+  color: var(--text-main);
+}
+.nav-item.active {
+  background-color: rgba(51, 255, 102, 0.1);
+  color: var(--accent-green);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 4px 4px 0;
+}
+.nav-item .tip {
+  margin-left: 10px;
+}
+.nav-sep {
+  height: 1px;
+  background: var(--border-color);
+  margin: 10px 0;
+}
+
+/* Fixes for right sidebar injected controls */
+.sec {
+  border-bottom: 1px solid var(--border-color);
+  padding: 15px 0;
+}
+.sec:last-child { border-bottom: none; }
+.sec-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; color: var(--text-dark); margin-bottom: 15px;
+  cursor: pointer; user-select: none; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.sec-title {
+  font-weight: 700;
+}
+.sec-hdr::after { content: ''; } /* Remove old + - if they existed */
+
+.ctrl, .color-row, .row {
+  margin-bottom: 15px;
+}
+
+.ctrl-row, .color-lbl, .row label {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.ctrl-v, .val {
+  color: var(--text-main);
+}
+
+/* Original GenStudio specific styling to match requested layout */
+.size-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 15px; }
+.size-pill {
+  border: 1px solid var(--border-color); background: transparent; text-align: center; padding: 6px 0;
+  font-size: 10px; color: var(--text-muted); cursor: pointer; border-radius: var(--radius);
+  font-family: var(--font-main); transition: 0.2s;
+}
+.size-pill.active { background: var(--accent-green); border-color: var(--accent-green); color: #000; font-weight: bold; }
+.size-pill:hover:not(.active) { border-color: var(--text-main); color: var(--text-main); }
+
+.custom-size { display: flex; align-items: center; gap: 10px; }
+.custom-size input { flex: 1; }
+.custom-size span { color: var(--text-muted); }
+
+/* Range sliders */
+input[type=range] {
+  -webkit-appearance: none; width: 100%; height: 2px; background: var(--border-color);
+  outline: none; margin: 10px 0; display: block;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px; background: var(--accent-green);
+  border-radius: 2px; cursor: pointer; transition: transform 0.1s;
+}
+
+/* Selects and Inputs */
+select, input[type=text], input[type=number] {
+  width: 100%; background: transparent; border: 1px solid var(--border-color);
+  color: var(--text-main); font-family: var(--font-main); font-size: 11px;
+  padding: 8px 12px; outline: none; border-radius: 2px; cursor: pointer;
+  appearance: none;
+}
+select:focus, input[type=text]:focus, input[type=number]:focus { border-color: var(--text-muted); }
+
+/* Color row alignment */
+.color-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+.color-lbl { margin-bottom: 0; }
+.color-swatch {
+  width: 32px; height: 16px; border-radius: 2px; border: 1px solid var(--border-color);
+  position: relative; overflow: hidden; cursor: pointer;
+}
+.color-swatch input[type=color] {
+  position: absolute; opacity: 0; inset: -5px; width: 50px; height: 40px; cursor: pointer;
+}
+
+/* Toggle */
+.tog {
+  width: 32px; height: 16px; background: #222; border-radius: 2px; position: relative; cursor: pointer; transition: 0.2s;
+}
+.tog::after {
+  content: ''; position: absolute; left: 0; top: 0; width: 16px; height: 16px;
+  background: var(--text-muted); border-radius: 2px; transition: 0.2s;
+}
+.tog.on { background: var(--accent-green); border-color: var(--accent-green); }
+.tog.on::after { left: 16px; background: #fff; box-shadow: var(--green-glow); }

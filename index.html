@@ -60,6 +60,7 @@
       </div>
 
       <div class="actions-right">
+        <button class="btn-ghost" id="btn-css">Copy CSS</button>
         <button class="btn-primary" id="btn-export">Export</button>
       </div>
     </div>
@@ -87,10 +88,11 @@
 <script src="js/app.js"></script>
 
 
-<!-- Download Modal -->
+<!-- Export + Ad Modal -->
 <div id="download-modal" class="modal-overlay" style="display: none;">
   <div class="modal-content" style="max-width: 500px; text-align: center;">
-    <h3>Export Options</h3>
+    <h3>Export with Sponsored Slot</h3>
+    <p style="color:#888; font-size:12px; margin-top:6px;">Choose format and quality, then download your file.</p>
     <div style="margin: 20px 0; display: flex; gap: 20px; justify-content: center;">
         <div>
             <label>Format:</label>
@@ -111,24 +113,13 @@
             </select>
         </div>
     </div>
-    <div class="ad-slot" style="width: 100%; height: 250px; background: #222; margin: 20px 0; display: flex; align-items: center; justify-content: center; color: #888;">
-        Ad Space (Placeholder)
+    <div class="ad-slot" style="width: 100%; height: 250px; background: #222; margin: 20px 0; display: flex; align-items: center; justify-content: center; color: #888; border: 1px dashed #444;">
+        Advertisement Slot (300x250)
     </div>
     <div style="display: flex; gap: 10px; justify-content: center;">
         <button class="btn-ghost" onclick="document.getElementById('download-modal').style.display='none'">Cancel</button>
         <button class="btn-primary" id="confirm-download-btn">Download</button>
     </div>
-  </div>
-</div>
-
-<!-- Full Screen Ad Modal -->
-<div id="full-ad-modal" class="modal-overlay" style="display: none;">
-  <div class="modal-content" style="width: 50%; max-width: 800px; text-align: center;">
-    <h3>Advertisement</h3>
-    <div class="full-ad-slot" style="width: 100%; height: 400px; background: #222; margin: 20px 0; display: flex; align-items: center; justify-content: center; color: #888;">
-        Full Screen Ad Space
-    </div>
-    <button class="btn-primary" onclick="document.getElementById('full-ad-modal').style.display='none'; document.getElementById('download-modal').style.display='flex';">Skip to Download</button>
   </div>
 </div>
 

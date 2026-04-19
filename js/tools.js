@@ -964,9 +964,8 @@ TOOLS.webImage = {
        img.onload = () => {
            window.__webImageCache = { url: imgUrl, img: img };
            // force re-render once loaded
-           if (window.params && window.params.current === 'webImage') {
-               // A bit hacky, but will trigger schedRender since we don't have access to it directly here
-               document.getElementById('tool-name')?.click(); // trigger dummy event if possible, or just draw
+           if (window.current_tool && window.current_tool() === 'webImage') {
+               requestAnimationFrame(() => drawWebImage(C, cx, p, img));
            }
            // We'll draw immediately anyway
            drawWebImage(C, cx, p, img);

@@ -760,16 +760,19 @@ function init() {
       const p = JSON.parse(JSON.stringify(params[current])); // Deep clone
       const baseW = p.w || 1200;
       const baseH = p.h || 1200;
+      const exportW = baseW * scale;
+      const exportH = baseH * scale;
+      p.w = exportW;
+      p.h = exportH;
 
       const realCanvas = document.createElement('canvas');
-      realCanvas.width = baseW * scale;
-      realCanvas.height = baseH * scale;
+      realCanvas.width = exportW;
+      realCanvas.height = exportH;
       const realCtx = realCanvas.getContext('2d');
-      realCtx.scale(scale, scale);
 
       const proxyCanvas = {
-          width: baseW,
-          height: baseH,
+          width: exportW,
+          height: exportH,
           getContext: () => realCtx,
           toDataURL: (...args) => realCanvas.toDataURL(...args)
       };

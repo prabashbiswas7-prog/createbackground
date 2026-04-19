@@ -6,7 +6,7 @@ const App = (() => {
 const TOOL_ORDER = [
   'blocks','gradients','lines','organic','plotter','topo','marble',
   'ascii','dither','noise','circles','typography','waves','voronoi',
-  'fractal','pixelSort','truchet','crystal','spirograph','flowField','webImage'
+  'fractal','pixelSort','truchet','crystal','spirograph','flowField'
 ];
 
 // ── Default params ────────────────────────────────────────────
@@ -38,6 +38,8 @@ const DEFAULTS = {
 let canvas, ctx;
 let current = 'blocks';
 let params = {};
+window.params = params;
+window.current_tool = () => current;
 let renderTimer = null;
 let loadedImage = null;
 
@@ -97,7 +99,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) +
+        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
         R('density','Color Density',p.density,0,100,1) +
         C2('lineColor','Border Color',p.lineColor)
       ) +
@@ -177,7 +179,7 @@ function buildPanel(tool) {
       SEC('Color',
         C2('bg','Background',p.bg) +
         S('colorMode','Mode',['gradient','palette'],p.colorMode) +
-        S('palette','Palette',PAL_OPTS,p.palette||'Terminal')
+        S('palette','Palette',PAL_OPTS,p.palette||'Terminal') + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '')
       ) +
       SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
 
@@ -205,7 +207,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) +
+        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
         R('grain','Grain',p.grain,0,80,1)
       ),
 
@@ -285,7 +287,7 @@ function buildPanel(tool) {
         R('cellSize','Cell Size',p.cellSize,1,20,1,'px') +
         R('seed','Seed',p.seed,0,9999,1)
       ) +
-      SEC('Palette', S('palette','Palette',PAL_OPTS,p.palette)),
+      SEC('Palette', S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '')),
 
     noise: CANVAS_SEC(p) +
       SEC('Noise',
@@ -324,7 +326,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) +
+        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
         C2('lineColor','Stroke Color',p.lineColor)
       ) +
       SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
@@ -350,7 +352,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) +
+        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
         R('grain','Grain',p.grain,0,80,1)
       ),
 
@@ -380,7 +382,7 @@ function buildPanel(tool) {
         S('metric','Distance',['Euclidean','Manhattan','Chebyshev'],p.metric)
       ) +
       SEC('Color',
-        S('palette','Palette',PAL_OPTS,p.palette) +
+        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
         T('drawEdges','Draw Edges',p.drawEdges) +
         C2('edgeColor','Edge Color',p.edgeColor||'#000000')
       ) +
@@ -399,14 +401,14 @@ function buildPanel(tool) {
         R('juliaCi','C Imag',p.juliaCi,-2,2,0.01)
       ) +
       SEC('Color',
-        S('palette','Palette',PAL_OPTS,p.palette) +
+        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
         R('colorCycles','Color Cycles',p.colorCycles,0,10,0.5)
       ),
 
     pixelSort: CANVAS_SEC(p) +
       SEC('Source',
         `<div class="upload-zone" id="ps-zone"><input type="file" id="ps-file" accept="image/*"><div>LOAD IMAGE</div></div>` +
-        S('palette','Base Palette',PAL_OPTS,p.palette)
+        S('palette','Base Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '')
       ) +
       SEC('Sort',
         S('direction','Direction',['Horizontal','Vertical','Both'],p.direction) +
@@ -424,7 +426,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) +
+        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
         R('grain','Grain',p.grain,0,80,1)
       ),
 
@@ -437,7 +439,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) +
+        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
         C2('lineColor','Edge Color',p.lineColor||'rgba(0,0,0,0.2)') +
         R('stroke','Edge Weight',p.stroke,0,6,0.25) +
         R('grain','Grain',p.grain,0,80,1)
@@ -491,7 +493,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) +
+        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
         R('grain','Grain',p.grain,0,80,1)
       ),
   };
@@ -651,7 +653,7 @@ function doRender() {
   if (!tool || !canvas) return;
 
   // Resize canvas if needed
-  const w = p.w || 800, h = p.h || 800;
+  const w = p.w || 1200, h = p.h || 1200;
   if (canvas.width !== w) canvas.width = w;
   if (canvas.height !== h) canvas.height = h;
 
@@ -714,11 +716,100 @@ function init() {
     nav.appendChild(btn);
   });
 
+
+  // Tool search
+  const searchInput = document.querySelector('.search-box input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const val = e.target.value.toLowerCase();
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        const toolName = item.querySelector('.tip').textContent.toLowerCase();
+        if (toolName.includes(val)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      // Handle separators based on visibility of items (optional, but cleaner)
+      const navSeps = document.querySelectorAll('.nav-sep');
+      navSeps.forEach(sep => sep.style.display = val ? 'none' : 'block');
+    });
+  }
+
+
+  // Export Modal Logic
+  let pendingExportType = '';
+
+  function triggerExportModal(type) {
+      pendingExportType = type;
+      let downloads = parseInt(localStorage.getItem('genstudio_downloads') || '0');
+      downloads++;
+      localStorage.setItem('genstudio_downloads', downloads.toString());
+
+      if (downloads > 6) {
+          document.getElementById('full-ad-modal').style.display = 'flex';
+          localStorage.setItem('genstudio_downloads', '0'); // reset
+      } else {
+          document.getElementById('download-modal').style.display = 'flex';
+      }
+  }
+
+  document.getElementById('btn-png')?.addEventListener('click', () => triggerExportModal('png'));
+  document.getElementById('btn-jpg')?.addEventListener('click', () => triggerExportModal('jpg'));
+  document.getElementById('btn-svg')?.addEventListener('click', () => triggerExportModal('svg'));
+
+  document.getElementById('confirm-download-btn')?.addEventListener('click', () => {
+      document.getElementById('download-modal').style.display = 'none';
+      const scale = parseInt(document.getElementById('export-quality').value || '1');
+
+      const p = JSON.parse(JSON.stringify(params[current])); // Deep clone
+      p.w = (p.w || 1200) * scale;
+      p.h = (p.h || 1200) * scale;
+
+      // Some parameters also need scaling to keep proportions (stroke width, margins, counts if density based)
+      // but a generic approach for a pixel canvas is to literally scale the context AND scale W, H.
+      // Actually, if we scale W and H, the tool will draw over a larger area.
+      // Let's just scale context and keep original W/H, or vice versa?
+      // Best approach for vanilla JS canvas: Keep original W, H in params (since some logic depends on it),
+      // Set canvas W, H to W*scale, H*scale.
+      // Then `ctx.scale(scale, scale)`. Then `tool.render(canvas, ctx, p)`.
+      // WAIT, `tool.render(C, cx, p)` often reads `C.width` to fill background.
+      // If `C.width` is `W*scale` and we scaled context, we'll draw way off screen!
+      // So we must pass a FAKE canvas object that returns the original W,H but has the real canvas context.
+
+      const realCanvas = document.createElement('canvas');
+      realCanvas.width = (p.w || 1200) * scale;
+      realCanvas.height = (p.h || 1200) * scale;
+      const realCtx = realCanvas.getContext('2d');
+      realCtx.scale(scale, scale);
+
+      const proxyCanvas = {
+          width: p.w || 1200,
+          height: p.h || 1200,
+          getContext: () => realCtx,
+          toDataURL: (...args) => realCanvas.toDataURL(...args)
+      };
+
+      try {
+          if (!TOOLS[current]) return;
+          TOOLS[current].render(proxyCanvas, realCtx, p);
+
+          if (pendingExportType === 'png') GS.exportPNG(realCanvas, current);
+          if (pendingExportType === 'jpg') GS.exportJPG(realCanvas, current);
+          if (pendingExportType === 'svg') {
+             // SVG export uses toDataURL, so we can pass proxyCanvas or realCanvas. RealCanvas is fine.
+             GS.exportSVG(realCanvas, current);
+          }
+      } catch (e) {
+          console.error(e);
+          GS.toast('Export Failed');
+      }
+  });
+
   // Header buttons
   document.getElementById('btn-random')?.addEventListener('click', randomize);
-  document.getElementById('btn-png')?.addEventListener('click', () => GS.exportPNG(canvas, current));
-  document.getElementById('btn-jpg')?.addEventListener('click', () => GS.exportJPG(canvas, current));
-  document.getElementById('btn-svg')?.addEventListener('click', () => GS.exportSVG(canvas, current));
+
   document.getElementById('btn-reset')?.addEventListener('click', () => {
     resetParams(current); switchTool(current); GS.toast('Reset');
   });
@@ -751,3 +842,18 @@ return { init };
 })();
 
 window.addEventListener('DOMContentLoaded', () => App.init());
+
+// Add Copy CSS functionality
+document.getElementById('btn-css')?.addEventListener('click', () => {
+    const p = params[current];
+    const bg = p.bg || '#000000';
+    let css = `background-color: ${bg};\n`;
+    if (p.stops) {
+        css += `background-image: linear-gradient(90deg, ${p.stops.map(s => `${s[1]} ${s[0]*100}%`).join(', ')});\n`;
+    }
+    navigator.clipboard.writeText(css).then(() => {
+        GS.toast('CSS Copied to clipboard!');
+    }).catch(err => {
+        GS.toast('Failed to copy CSS');
+    });
+});

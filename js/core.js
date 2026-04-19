@@ -132,10 +132,18 @@ const PALETTES = {
   'Retro':       ['#2b0a3d','#7b1fa2','#e91e63','#ff9800','#ffeb3b'],
   'Purple Dream':['#1a0533','#4a1080','#7c5cfc','#c084fc','#f5d0fe'],
   'CGA':         ['#000000','#0000aa','#00aa00','#00aaaa','#aa0000'],
+  'Custom':      ['#ff0000','#00ff00','#0000ff','#ffff00','#00ffff'],
 };
 
 const PALETTE_NAMES = Object.keys(PALETTES);
-function getPalette(n) { return PALETTES[n] || PALETTES['Terminal']; }
+function getPalette(n, p_obj) {
+  if (n === 'Custom') {
+      // p_obj is not always passed, but we can grab from window.params[window.current]
+      const p = p_obj || (window.params && window.current_tool && window.params[window.current_tool()]) || {};
+      return [p.custom1||'#ff0000', p.custom2||'#00ff00', p.custom3||'#0000ff', p.custom4||'#ffff00', p.custom5||'#00ffff'];
+  }
+  return PALETTES[n] || PALETTES['Terminal'];
+}
 function randPalette(rng) {
   return PALETTE_NAMES[Math.floor((rng || Math.random)() * PALETTE_NAMES.length)];
 }

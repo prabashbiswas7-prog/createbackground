@@ -38,7 +38,7 @@
   <!-- Center Area -->
   <main class="center-area">
     <div class="canvas-container" id="canvas-wrap">
-      <canvas id="main-canvas" width="800" height="800"></canvas>
+      <canvas id="main-canvas" width="1200" height="1200"></canvas>
     </div>
 
     <!-- Bottom Bar -->
@@ -60,10 +60,10 @@
       </div>
 
       <div class="actions-right">
-        <button class="btn-ghost" id="btn-png">EXPORT_PNG</button>
-        <button class="btn-ghost" id="btn-svg">EXPORT_SVG</button>
-        <button class="btn-ghost">COPY_CSS</button>
-        <button class="btn-primary" id="btn-jpg">EXPORT_BUNDLE</button>
+        <button class="btn-ghost" id="btn-png">Export PNG</button>
+        <button class="btn-ghost" id="btn-svg">Export SVG</button>
+        <button class="btn-ghost" id="btn-css">Copy CSS</button>
+        <button class="btn-primary" id="btn-jpg">Export Bundle</button>
       </div>
     </div>
   </main>
@@ -88,6 +88,41 @@
 <script src="js/core.js"></script>
 <script src="js/tools.js"></script>
 <script src="js/app.js"></script>
+
+
+<!-- Download Modal -->
+<div id="download-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-content" style="max-width: 500px; text-align: center;">
+    <h3>Export Options</h3>
+    <div style="margin: 20px 0;">
+        <label>Quality:</label>
+        <select id="export-quality" style="width: auto; display: inline-block; margin-left: 10px;">
+            <option value="1">1x (Standard)</option>
+            <option value="2">2x (High)</option>
+            <option value="3">3x (Ultra)</option>
+            <option value="5">5x (Max)</option>
+        </select>
+    </div>
+    <div class="ad-slot" style="width: 100%; height: 250px; background: #222; margin: 20px 0; display: flex; align-items: center; justify-content: center; color: #888;">
+        Ad Space (Placeholder)
+    </div>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn-ghost" onclick="document.getElementById('download-modal').style.display='none'">Cancel</button>
+        <button class="btn-primary" id="confirm-download-btn">Download</button>
+    </div>
+  </div>
+</div>
+
+<!-- Full Screen Ad Modal -->
+<div id="full-ad-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-content" style="width: 50%; max-width: 800px; text-align: center;">
+    <h3>Advertisement</h3>
+    <div class="full-ad-slot" style="width: 100%; height: 400px; background: #222; margin: 20px 0; display: flex; align-items: center; justify-content: center; color: #888;">
+        Full Screen Ad Space
+    </div>
+    <button class="btn-primary" onclick="document.getElementById('full-ad-modal').style.display='none'; document.getElementById('download-modal').style.display='flex';">Skip to Download</button>
+  </div>
+</div>
 
 </body>
 </html>

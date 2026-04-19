@@ -5,9 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>KITDB_SYSTEM</title>
 <link rel="stylesheet" href="css/main.css">
-
 </head>
 <body>
+
+<!-- Boot screen -->
+<div id="loading">
+  <div class="boot-logo">KITDB_SYSTEM</div>
+  <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+  <div class="boot-text">INITIALIZING...</div>
+</div>
 
 <div id="layout">
 
@@ -23,66 +29,40 @@
       <input type="text" placeholder="SEARCH TOOLS...">
     </div>
 
-    <nav class="main-nav">
-      <a href="#" class="nav-item active">
-        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
-        PERFORMANCE
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-        NETWORK
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        DEBUGGER
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-        STORAGE
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
-        MEMORY
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        SECURITY
-      </a>
+    <nav class="main-nav" id="tool-nav">
+      <!-- Tools will be injected here -->
     </nav>
   </aside>
 
   <!-- Center Area -->
   <main class="center-area">
-    <div class="canvas-container">
-      <div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497zM15 5l4 4"/></svg>
-        <div>CANVAS READY</div>
-      </div>
+    <div class="canvas-container" id="canvas-wrap">
+      <canvas id="main-canvas" width="800" height="800"></canvas>
     </div>
 
     <!-- Bottom Bar -->
     <div class="bottom-bar">
       <div class="status-left">
-        <div class="status-title">PERFORMANCE_V2</div>
-        <div class="status-ref">SYS_REF: 082</div>
+        <div class="status-title" id="tool-name">PERFORMANCE_V2</div>
+        <div class="status-ref" id="status-text">SYS_REF: 082</div>
       </div>
 
       <div class="actions-center">
-        <button class="btn-ghost">
+        <button class="btn-ghost" id="btn-random">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
           RANDOMIZE
         </button>
-        <button class="btn-ghost">
+        <button class="btn-ghost" id="btn-reset">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           RESET
         </button>
       </div>
 
       <div class="actions-right">
-        <button class="btn-ghost">EXPORT_PNG</button>
-        <button class="btn-ghost">EXPORT_SVG</button>
+        <button class="btn-ghost" id="btn-png">EXPORT_PNG</button>
+        <button class="btn-ghost" id="btn-svg">EXPORT_SVG</button>
         <button class="btn-ghost">COPY_CSS</button>
-        <button class="btn-primary">EXPORT_BUNDLE</button>
+        <button class="btn-primary" id="btn-jpg">EXPORT_BUNDLE</button>
       </div>
     </div>
   </main>
@@ -94,80 +74,19 @@
       <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
     </div>
 
-    <div class="controls-content">
-
-      <!-- Section 1 -->
-      <div class="control-section">
-        <div class="section-title">01 // LAYOUT_ENGINE</div>
-
-        <div class="control-group">
-          <div class="control-header">
-            <label>GRID_SIZE</label>
-            <span class="value">40px</span>
-          </div>
-          <div class="slider-container">
-            <input type="range" min="10" max="100" value="40" class="slider">
-          </div>
-        </div>
-
-        <div class="control-group">
-          <div class="control-header">
-            <label>OPACITY</label>
-            <span class="value">0.15</span>
-          </div>
-          <div class="slider-container">
-            <input type="range" min="0" max="100" value="15" class="slider">
-          </div>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- Section 2 -->
-      <div class="control-section">
-        <div class="section-title">02 // CORE_PROPERTIES</div>
-
-        <div class="control-group">
-          <label>OBJECT_NAME</label>
-          <input type="text" value="LAYER_001" class="text-input">
-        </div>
-
-        <div class="input-row">
-          <div class="control-group">
-            <label>WIDTH_PX</label>
-            <input type="text" value="1024" class="text-input">
-          </div>
-          <div class="control-group">
-            <label>HEIGHT_PX</label>
-            <input type="text" value="768" class="text-input">
-          </div>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- Section 3 -->
-      <div class="control-section">
-        <div class="section-title">03 // RENDER_FLAGS</div>
-
-        <div class="toggle-row">
-          <label>ENABLE_AA</label>
-          <div class="toggle active"></div>
-        </div>
-        <div class="toggle-row">
-          <label>HARD_EDGES</label>
-          <div class="toggle"></div>
-        </div>
-        <div class="toggle-row">
-          <label>DEBUG_LAYER</label>
-          <div class="toggle"></div>
-        </div>
-      </div>
-
+    <div class="controls-content" id="sidebar-content">
+      <!-- Controls will be injected here -->
     </div>
   </aside>
 
 </div>
+
+<div id="toasts"></div>
+
+<!-- Scripts -->
+<script src="js/core.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/app.js"></script>
 
 </body>
 </html>

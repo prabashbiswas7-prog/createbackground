@@ -502,3 +502,23 @@ select:focus, input[type=text]:focus, input[type=number]:focus { border-color: v
 .tog.on { background: var(--accent-green); border-color: var(--accent-green); }
 .tog.on::after { left: 16px; background: #fff; box-shadow: var(--green-glow); }
 .val, .ctrl-v { text-align: right; }
+
+/* Fix Dropdown Option Colors */
+select option {
+    background-color: var(--bg-card);
+    color: var(--text-main);
+}
+
+/* Align text to the right in right sidebar inputs and selects */
+#sidebar-content select,
+#sidebar-content input[type="text"],
+#sidebar-content input[type="number"] {
+    text-align: right;
+}
+/* Ensure options inside select are right aligned if possible, or just the select box text */
+select {
+    text-align-last: right;
+}
+option {
+    direction: rtl;
+}

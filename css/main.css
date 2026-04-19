@@ -458,7 +458,7 @@ input[type=text]:focus, input[type=number]:focus { border-color: var(--text-mute
 .size-pill:hover:not(.active) { border-color: var(--text-main); color: var(--text-main); }
 
 .custom-size { display: flex; align-items: center; gap: 10px; }
-.custom-size input { flex: 1; }
+.custom-size input { flex: 1; text-align: right; }
 .custom-size span { color: var(--text-muted); }
 
 /* Range sliders */
@@ -501,3 +501,4 @@ select:focus, input[type=text]:focus, input[type=number]:focus { border-color: v
 }
 .tog.on { background: var(--accent-green); border-color: var(--accent-green); }
 .tog.on::after { left: 16px; background: #fff; box-shadow: var(--green-glow); }
+.val, .ctrl-v { text-align: right; }

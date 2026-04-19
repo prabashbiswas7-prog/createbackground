@@ -740,19 +740,17 @@ function init() {
 
   // Export Modal Logic
   function triggerExportModal() {
-      let downloads = parseInt(localStorage.getItem('genstudio_downloads') || '0');
-      downloads++;
-      localStorage.setItem('genstudio_downloads', downloads.toString());
-
-      if (downloads > 6) {
-          document.getElementById('full-ad-modal').style.display = 'flex';
-          localStorage.setItem('genstudio_downloads', '0'); // reset
-      } else {
-          document.getElementById('download-modal').style.display = 'flex';
-      }
+      document.getElementById('download-modal').style.display = 'flex';
   }
 
   document.getElementById('btn-export')?.addEventListener('click', triggerExportModal);
+
+  // Close modal when clicking outside the panel
+  document.getElementById('download-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'download-modal') {
+          document.getElementById('download-modal').style.display = 'none';
+      }
+  });
 
   document.getElementById('confirm-download-btn')?.addEventListener('click', () => {
       document.getElementById('download-modal').style.display = 'none';

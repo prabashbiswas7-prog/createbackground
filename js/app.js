@@ -6,31 +6,32 @@ const App = (() => {
 const TOOL_ORDER = [
   'blocks','gradients','lines','organic','plotter','topo','marble',
   'ascii','dither','noise','circles','typography','waves','voronoi',
-  'fractal','pixelSort','truchet','crystal','spirograph','flowField'
+  'fractal','pixelSort','truchet','crystal','spirograph','flowField','webImage'
 ];
 
 // ── Default params ────────────────────────────────────────────
 const DEFAULTS = {
-  blocks:    { w:800,h:800,seed:42,type:'Mondrian',count:10,complexity:4,asymmetry:50,bg:'#ffffff',palette:'Mondrian',density:40,stroke:2,lineColor:'#111111',wobble:40,grain:30 },
-  gradients: { w:800,h:800,seed:0,angle:45,noiseScale:2,noiseIntensity:55,curveDist:70,detail:2,depth:60,highlights:50,shadows:55,grain:8,brightness:0,contrast:100,saturation:100,stops:[[0,'#1a0533'],[0.33,'#4a1080'],[0.66,'#7c5cfc'],[1,'#f5d0fe']] },
-  lines:     { w:800,h:800,seed:42,shape:'Sine Waves',frequency:0.026,amplitude:68,count:40,padding:50,thickness:1.5,bg:'#0a0a0f',bg2:'#1a0a3a',lineColor:'#00ff41',lineColor2:'#003a0f',colorGradient:true,bgGradient:false,weightVar:0,wobble:0,opacityVar:0,rotationJitter:0,colorDrift:0,freqVar:0,halftone:0,grain:0 },
-  organic:   { w:800,h:800,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,amplitude:55,frequency:0.056,harmonics:3,wobble:12,roughness:12,colorMode:'gradient',bg:'#050505',palette:'Terminal',grain:0,stops:[[0,'#00ff41'],[0.5,'#003a0f'],[1,'#00ff41']] },
-  plotter:   { w:800,h:800,seed:12345,type:'Dot Grid',columns:20,rows:20,jitter:0,shape:'Circle',minSize:4,maxSize:24,strokeWeight:1,filled:true,rotation:0,wobble:0,noiseScale:0.02,noiseIntensity:1,palette:'Terminal',bg:'#050505',margin:40,grain:0 },
-  topo:      { w:800,h:800,seed:12345,levels:20,noiseScale:0.008,octaves:4,falloff:0.5,strokeWeight:1.5,wobble:0,smoothing:50,bg:'#050505',mode:'Single',lineColor:'#00ff41',opacity:100,grain:0,margin:20 },
-  marble:    { w:800,h:800,seed:0,noiseScale:1,wind:0,warp:0,fbmStrength:1,fbmDamping:1,grain:0,main:'#f0ece0',low:'#c8bfab',mid:'#9b8e7a',high:'#fff9f0',strength:1 },
-  ascii:     { w:800,h:600,seed:0,fontSize:8,letterSpacing:0,lineHeight:1,charSet:'Standard',matchColors:false,bg:'#000000',color:'#00ff41',contrast:100,brightness:0,invert:false,grain:0 },
-  dither:    { w:800,h:800,seed:0,palette:'Game Boy',sourceType:'Gradient',pattern:'Bayer 4x4',shape:'Square',cellSize:2 },
-  noise:     { w:800,h:800,seed:0,scale:4,octaves:4,warp:0,grain:0,ridged:false,terraced:false,terraces:8,c1:'#050505',c2:'#00ff41',stops:[[0,'#050505'],[0.5,'#003a0f'],[1,'#00ff41']] },
-  circles:   { w:800,h:800,seed:0,type:'Concentric',count:20,cx:50,cy:50,minR:8,maxR:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.3)',stroke:1,filled:false,pack:true,rows:8,cols:8,grain:0 },
-  typography:{ w:800,h:800,seed:0,text:'GENSTUDIO',type:'Scatter',font:'IBM Plex Mono',weight:'bold',count:200,minSize:10,maxSize:80,rotation:360,spacing:2,lineHeight:1.2,glow:0,palette:'Terminal',bg:'#050505',grain:0 },
-  waves:     { w:800,h:800,seed:0,layers:12,amplitude:60,frequency:2,harmonics:3,phase:0,offset:0,noise:0,opacity:70,grain:0,bg:'#0f1c2e',c1:'#0e4d68',c2:'#64dfb8',stops:[[0,'#0e4d68'],[0.5,'#1a9e8c'],[1,'#64dfb8']] },
-  voronoi:   { w:800,h:800,seed:0,count:40,palette:'Terminal',metric:'Euclidean',drawEdges:true,edgeColor:'#000000',grain:0 },
-  fractal:   { w:800,h:800,type:'Mandelbrot',cx:-0.5,cy:0,zoom:1,iterations:80,juliaC:-0.7,juliaCi:0.27,colorCycles:1,palette:'Cyberpunk',grain:0 },
-  pixelSort: { w:800,h:800,seed:0,direction:'Horizontal',threshold:50,sortBy:'Brightness',palette:'Terminal' },
-  truchet:   { w:800,h:800,seed:0,type:'Classic',tileSize:40,stroke:2,palette:'Mondrian',bg:'#ffffff',twoColor:true,grain:0 },
-  crystal:   { w:800,h:800,seed:0,cols:12,rows:12,jitter:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.15)',stroke:0.5,grain:0 },
-  spirograph:{ w:800,h:800,bg:'#050505',R:300,r:113,d:80,loops:15,steps:4000,stroke:1,grain:0,c1:'#00ff41',c2:'#003a0f',c3:'#7affaa' },
-  flowField: { w:800,h:800,seed:0,count:500,life:80,steps:150,speed:2,scale:3,octaves:2,curl:1,weight:1,opacity:40,palette:'Terminal',bg:'#050505',grain:0 },
+  blocks:    { w:1200,h:1200,seed:42,type:'Mondrian',count:10,complexity:4,asymmetry:50,bg:'#ffffff',palette:'Mondrian',density:40,stroke:2,lineColor:'#111111',wobble:40,grain:30 },
+  gradients: { w:1200,h:1200,seed:0,angle:45,noiseScale:2,noiseIntensity:55,curveDist:70,detail:2,depth:60,highlights:50,shadows:55,grain:8,brightness:0,contrast:100,saturation:100,stops:[[0,'#1a0533'],[0.33,'#4a1080'],[0.66,'#7c5cfc'],[1,'#f5d0fe']] },
+  lines:     { w:1200,h:1200,seed:42,shape:'Sine Waves',frequency:0.026,amplitude:68,count:40,padding:50,thickness:1.5,bg:'#0a0a0f',bg2:'#1a0a3a',lineColor:'#00ff41',lineColor2:'#003a0f',colorGradient:true,bgGradient:false,weightVar:0,wobble:0,opacityVar:0,rotationJitter:0,colorDrift:0,freqVar:0,halftone:0,grain:0 },
+  organic:   { w:1200,h:1200,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,amplitude:55,frequency:0.056,harmonics:3,wobble:12,roughness:12,colorMode:'gradient',bg:'#050505',palette:'Terminal',grain:0,stops:[[0,'#00ff41'],[0.5,'#003a0f'],[1,'#00ff41']] },
+  plotter:   { w:1200,h:1200,seed:12345,type:'Dot Grid',columns:20,rows:20,jitter:0,shape:'Circle',minSize:4,maxSize:24,strokeWeight:1,filled:true,rotation:0,wobble:0,noiseScale:0.02,noiseIntensity:1,palette:'Terminal',bg:'#050505',margin:40,grain:0 },
+  topo:      { w:1200,h:1200,seed:12345,levels:20,noiseScale:0.008,octaves:4,falloff:0.5,strokeWeight:1.5,wobble:0,smoothing:50,bg:'#050505',mode:'Single',lineColor:'#00ff41',opacity:100,grain:0,margin:20 },
+  marble:    { w:1200,h:1200,seed:0,noiseScale:1,wind:0,warp:0,fbmStrength:1,fbmDamping:1,grain:0,main:'#f0ece0',low:'#c8bfab',mid:'#9b8e7a',high:'#fff9f0',strength:1 },
+  ascii:     { w:1200,h:1200,seed:0,fontSize:8,letterSpacing:0,lineHeight:1,charSet:'Standard',matchColors:false,bg:'#000000',color:'#00ff41',contrast:100,brightness:0,invert:false,grain:0 },
+  dither:    { w:1200,h:1200,seed:0,palette:'Game Boy',sourceType:'Gradient',pattern:'Bayer 4x4',shape:'Square',cellSize:2 },
+  noise:     { w:1200,h:1200,seed:0,scale:4,octaves:4,warp:0,grain:0,ridged:false,terraced:false,terraces:8,c1:'#050505',c2:'#00ff41',stops:[[0,'#050505'],[0.5,'#003a0f'],[1,'#00ff41']] },
+  circles:   { w:1200,h:1200,seed:0,type:'Concentric',count:20,cx:50,cy:50,minR:8,maxR:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.3)',stroke:1,filled:false,pack:true,rows:8,cols:8,grain:0 },
+  typography:{ w:1200,h:1200,seed:0,text:'GENSTUDIO',type:'Scatter',font:'IBM Plex Mono',weight:'bold',count:200,minSize:10,maxSize:80,rotation:360,spacing:2,lineHeight:1.2,glow:0,palette:'Terminal',bg:'#050505',grain:0 },
+  waves:     { w:1200,h:1200,seed:0,layers:12,amplitude:60,frequency:2,harmonics:3,phase:0,offset:0,noise:0,opacity:70,grain:0,bg:'#0f1c2e',c1:'#0e4d68',c2:'#64dfb8',stops:[[0,'#0e4d68'],[0.5,'#1a9e8c'],[1,'#64dfb8']] },
+  voronoi:   { w:1200,h:1200,seed:0,count:40,palette:'Terminal',metric:'Euclidean',drawEdges:true,edgeColor:'#000000',grain:0 },
+  fractal:   { w:1200,h:1200,type:'Mandelbrot',cx:-0.5,cy:0,zoom:1,iterations:80,juliaC:-0.7,juliaCi:0.27,colorCycles:1,palette:'Cyberpunk',grain:0 },
+  pixelSort: { w:1200,h:1200,seed:0,direction:'Horizontal',threshold:50,sortBy:'Brightness',palette:'Terminal' },
+  truchet:   { w:1200,h:1200,seed:0,type:'Classic',tileSize:40,stroke:2,palette:'Mondrian',bg:'#ffffff',twoColor:true,grain:0 },
+  crystal:   { w:1200,h:1200,seed:0,cols:12,rows:12,jitter:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.15)',stroke:0.5,grain:0 },
+  spirograph:{ w:1200,h:1200,bg:'#050505',R:300,r:113,d:80,loops:15,steps:4000,stroke:1,grain:0,c1:'#00ff41',c2:'#003a0f',c3:'#7affaa' },
+  flowField: { w:1200,h:1200,seed:0,count:500,life:80,steps:150,speed:2,scale:3,octaves:2,curl:1,weight:1,opacity:40,palette:'Terminal',bg:'#050505',grain:0 },
+  webImage:  { w:1200,h:1200,seed:100,grayscale:false,blur:0,tint:'#000000',tintOpacity:0 },
 };
 
 // ── State ─────────────────────────────────────────────────────
@@ -459,6 +460,20 @@ function buildPanel(tool) {
       ) +
       SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
 
+
+    webImage: CANVAS_SEC(p) +
+      SEC('Image Source',
+        R('seed','Image ID (Seed)',p.seed,1,1000,1)
+      ) +
+      SEC('Filters',
+        T('grayscale','Grayscale',p.grayscale) +
+        R('blur','Blur',p.blur,0,20,1)
+      ) +
+      SEC('Tint',
+        C2('tint','Tint Color',p.tint) +
+        R('tintOpacity','Tint Opacity',p.tintOpacity,0,100,1)
+      ),
+
     flowField: CANVAS_SEC(p) +
       SEC('Particles',
         R('seed','Seed',p.seed,0,9999,1) +
@@ -538,10 +553,19 @@ function bindSection(tool) {
         const idx = parseInt(el.id.slice(2));
         if (p.stops[idx]) p.stops[idx][1] = el.value;
       }
+
       // Update noise stops
       if (tool === 'noise') {
-        p.stops = [[0, p.c1||'#050505'],[0.5,'#003a0f'],[1, p.c2||'#00ff41']];
+        if (!p.stops) p.stops = [[0, '#050505'], [0.5, '#003a0f'], [1, '#00ff41']];
+        p.stops[0][1] = p.c1 || p.stops[0][1];
+        p.stops[2][1] = p.c2 || p.stops[2][1];
       }
+      if (tool === 'waves') {
+        if (!p.stops) p.stops = [[0, '#0e4d68'], [0.5, '#1a9e8c'], [1, '#64dfb8']];
+        p.stops[0][1] = p.c1 || p.stops[0][1];
+        p.stops[2][1] = p.c2 || p.stops[2][1];
+      }
+
       schedRender();
     });
   });
@@ -616,9 +640,9 @@ function bindUpload(inputId, zoneId) {
 }
 
 // ── Render ────────────────────────────────────────────────────
-function schedRender(delay=80) {
-  if (renderTimer) clearTimeout(renderTimer);
-  renderTimer = setTimeout(doRender, delay);
+function schedRender(delay=10) {
+  if (renderTimer) cancelAnimationFrame(renderTimer);
+  renderTimer = requestAnimationFrame(() => setTimeout(doRender, delay));
 }
 
 function doRender() {
@@ -632,13 +656,19 @@ function doRender() {
   if (canvas.height !== h) canvas.height = h;
 
   try {
+
     // Update noise stops when colors change
     if (current === 'noise') {
-      p.stops = [[0, p.c1||'#050505'],[0.5,'#003a0f'],[1, p.c2||'#00ff41']];
+        if (!p.stops) p.stops = [[0, '#050505'], [0.5, '#003a0f'], [1, '#00ff41']];
+        p.stops[0][1] = p.c1 || p.stops[0][1];
+        p.stops[2][1] = p.c2 || p.stops[2][1];
     }
     if (current === 'waves') {
-      p.stops = [[0, p.c1||'#0e4d68'],[0.5,'#1a9e8c'],[1, p.c2||'#64dfb8']];
+        if (!p.stops) p.stops = [[0, '#0e4d68'], [0.5, '#1a9e8c'], [1, '#64dfb8']];
+        p.stops[0][1] = p.c1 || p.stops[0][1];
+        p.stops[2][1] = p.c2 || p.stops[2][1];
     }
+
     tool.render(canvas, ctx, p, loadedImage);
   } catch(e) {
     console.error('[GenStudio] Render error in', current, ':', e);

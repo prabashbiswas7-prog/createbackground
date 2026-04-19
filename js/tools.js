@@ -941,3 +941,49 @@ TOOLS.flowField = {
     if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
   }
 };
+
+// ── 21. WEB IMAGE ──────────────────────────────────────────────
+TOOLS.webImage = {
+  name: 'Web Image', icon: '🌐',
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    cx.fillStyle = p.bg || '#000'; cx.fillRect(0, 0, W, H);
+
+    const imgUrl = `https://picsum.photos/id/${p.seed}/${W}/${H}${p.grayscale ? '?grayscale' : ''}${p.blur > 0 ? (p.grayscale ? '&' : '?') + 'blur=' + p.blur : ''}`;
+
+    // We use a global cache to avoid infinite re-renders on slider drag
+    window.__webImageCache = window.__webImageCache || {};
+
+    if (window.__webImageCache.url !== imgUrl) {
+       // Draw loading state
+       cx.fillStyle = '#111'; cx.fillRect(0,0,W,H);
+       cx.fillStyle = '#fff'; cx.font = '20px Arial'; cx.fillText('Loading from internet...', W/2 - 100, H/2);
+
+       const img = new Image();
+       img.crossOrigin = 'Anonymous';
+       img.onload = () => {
+           window.__webImageCache = { url: imgUrl, img: img };
+           // force re-render once loaded
+           if (window.params && window.params.current === 'webImage') {
+               // A bit hacky, but will trigger schedRender since we don't have access to it directly here
+               document.getElementById('tool-name')?.click(); // trigger dummy event if possible, or just draw
+           }
+           // We'll draw immediately anyway
+           drawWebImage(C, cx, p, img);
+       };
+       img.src = imgUrl;
+    } else {
+       drawWebImage(C, cx, p, window.__webImageCache.img);
+    }
+
+    function drawWebImage(C, cx, p, img) {
+        cx.drawImage(img, 0, 0, C.width, C.height);
+        if (p.tintOpacity > 0) {
+            cx.fillStyle = p.tint;
+            cx.globalAlpha = p.tintOpacity / 100;
+            cx.fillRect(0, 0, C.width, C.height);
+            cx.globalAlpha = 1;
+        }
+    }
+  }
+};

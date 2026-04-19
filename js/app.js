@@ -6,7 +6,7 @@ const App = (() => {
 const TOOL_ORDER = [
   'blocks','gradients','lines','organic','plotter','topo','marble',
   'ascii','dither','noise','circles','typography','waves','voronoi',
-  'fractal','pixelSort','truchet','crystal','spirograph','flowField'
+  'fractal','pixelSort','webImage','truchet','crystal','spirograph','flowField'
 ];
 
 // ── Default params ────────────────────────────────────────────
@@ -740,19 +740,17 @@ function init() {
 
   // Export Modal Logic
   function triggerExportModal() {
-      let downloads = parseInt(localStorage.getItem('genstudio_downloads') || '0');
-      downloads++;
-      localStorage.setItem('genstudio_downloads', downloads.toString());
-
-      if (downloads > 6) {
-          document.getElementById('full-ad-modal').style.display = 'flex';
-          localStorage.setItem('genstudio_downloads', '0'); // reset
-      } else {
-          document.getElementById('download-modal').style.display = 'flex';
-      }
+      document.getElementById('download-modal').style.display = 'flex';
   }
 
   document.getElementById('btn-export')?.addEventListener('click', triggerExportModal);
+
+  // Close modal when clicking outside the panel
+  document.getElementById('download-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'download-modal') {
+          document.getElementById('download-modal').style.display = 'none';
+      }
+  });
 
   document.getElementById('confirm-download-btn')?.addEventListener('click', () => {
       document.getElementById('download-modal').style.display = 'none';
@@ -760,25 +758,28 @@ function init() {
       const format = document.getElementById('export-format').value || 'png';
 
       const p = JSON.parse(JSON.stringify(params[current])); // Deep clone
-      p.w = (p.w || 1200) * scale;
-      p.h = (p.h || 1200) * scale;
+      const baseW = p.w || 1200;
+      const baseH = p.h || 1200;
+      const exportW = baseW * scale;
+      const exportH = baseH * scale;
+      p.w = exportW;
+      p.h = exportH;
 
       const realCanvas = document.createElement('canvas');
-      realCanvas.width = (p.w || 1200) * scale;
-      realCanvas.height = (p.h || 1200) * scale;
+      realCanvas.width = exportW;
+      realCanvas.height = exportH;
       const realCtx = realCanvas.getContext('2d');
-      realCtx.scale(scale, scale);
 
       const proxyCanvas = {
-          width: p.w || 1200,
-          height: p.h || 1200,
+          width: exportW,
+          height: exportH,
           getContext: () => realCtx,
           toDataURL: (...args) => realCanvas.toDataURL(...args)
       };
 
       try {
           if (!TOOLS[current]) return;
-          TOOLS[current].render(proxyCanvas, realCtx, p);
+          TOOLS[current].render(proxyCanvas, realCtx, p, loadedImage);
 
           if (format === 'png') GS.exportPNG(realCanvas, current);
           if (format === 'jpg') GS.exportJPG(realCanvas, current);
@@ -795,6 +796,21 @@ function init() {
 
   document.getElementById('btn-reset')?.addEventListener('click', () => {
     resetParams(current); switchTool(current); GS.toast('Reset');
+  });
+
+  // Copy CSS button
+  document.getElementById('btn-css')?.addEventListener('click', () => {
+    const p = params[current];
+    const bg = p.bg || '#000000';
+    let css = `background-color: ${bg};\n`;
+    if (p.stops) {
+      css += `background-image: linear-gradient(90deg, ${p.stops.map(s => `${s[1]} ${s[0]*100}%`).join(', ')});\n`;
+    }
+    navigator.clipboard.writeText(css).then(() => {
+      GS.toast('CSS Copied to clipboard!');
+    }).catch(() => {
+      GS.toast('Failed to copy CSS');
+    });
   });
 
   // Keyboard
@@ -825,18 +841,3 @@ return { init };
 })();
 
 window.addEventListener('DOMContentLoaded', () => App.init());
-
-// Add Copy CSS functionality
-document.getElementById('btn-css')?.addEventListener('click', () => {
-    const p = params[current];
-    const bg = p.bg || '#000000';
-    let css = `background-color: ${bg};\n`;
-    if (p.stops) {
-        css += `background-image: linear-gradient(90deg, ${p.stops.map(s => `${s[1]} ${s[0]*100}%`).join(', ')});\n`;
-    }
-    navigator.clipboard.writeText(css).then(() => {
-        GS.toast('CSS Copied to clipboard!');
-    }).catch(err => {
-        GS.toast('Failed to copy CSS');
-    });
-});

@@ -631,6 +631,13 @@ function switchTool(id) {
     sc.querySelectorAll('.sec-hdr').forEach(h => {
       h.addEventListener('click', () => h.closest('.sec').classList.toggle('closed'));
     });
+
+    if (window.innerWidth <= 768) {
+      if (typeof closeMobileDrawer === 'function') closeMobileDrawer();
+      // On mobile, ensure horizontal control sections are not visually "closed"
+      // because we want them all to show up as scrollable tabs
+      sc.querySelectorAll('.sec').forEach(sec => sec.classList.remove('closed'));
+    }
   }
   schedRender();
 }
@@ -931,6 +938,31 @@ function init() {
     if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); GS.exportPNG(canvas, current); }
     if ((e.ctrlKey||e.metaKey) && e.key==='r') { e.preventDefault(); randomize(); }
   });
+
+  // Mobile UI Interactivity
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const leftSidebar = document.getElementById('left-sidebar');
+  const mobileOverlay = document.getElementById('mobile-overlay');
+
+  function toggleMobileDrawer() {
+    if (!leftSidebar || !mobileOverlay) return;
+    leftSidebar.classList.toggle('show');
+    mobileOverlay.classList.toggle('show');
+  }
+
+  function closeMobileDrawer() {
+    if (!leftSidebar || !mobileOverlay) return;
+    leftSidebar.classList.remove('show');
+    mobileOverlay.classList.remove('show');
+  }
+
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', toggleMobileDrawer);
+  }
+
+  if (mobileOverlay) {
+    mobileOverlay.addEventListener('click', closeMobileDrawer);
+  }
 
   // Boot animation
   const fill = document.getElementById('boot-fill');

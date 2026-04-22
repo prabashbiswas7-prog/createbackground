@@ -14,25 +14,34 @@ TOOLS.blocks = {
     cx.fillStyle = p.bg; cx.fillRect(0, 0, W, H);
 
     const rects = [];
+    const minS = p.minSize || 24;
     function split(x, y, w, h, depth) {
-      if (depth <= 0 || w < 24 || h < 24) { rects.push([x,y,w,h]); return; }
-      const doH = p.type === 'Columns' ? false : p.type === 'Rows' ? true : rng() < 0.5;
+      if (depth <= 0 || w < minS * 2 || h < minS * 2) { rects.push([x,y,w,h]); return; }
+      const sb = (p.splitBias !== undefined ? p.splitBias : 50) / 100;
+      const doH = p.type === 'Columns' ? false : p.type === 'Rows' ? true : rng() < sb;
       const f = 0.25 + rng() * 0.5 + (rng() - 0.5) * (p.asymmetry / 200);
       const prob = Math.min(0.95, p.complexity / 10);
       if (rng() > prob) { rects.push([x,y,w,h]); return; }
       if (doH) {
-        const cut = Math.max(12, Math.min(h - 12, h * f));
+        const cut = Math.max(minS, Math.min(h - minS, h * f));
         split(x, y, w, cut, depth - 1);
         split(x, y + cut, w, h - cut, depth - 1);
       } else {
-        const cut = Math.max(12, Math.min(w - 12, w * f));
+        const cut = Math.max(minS, Math.min(w - minS, w * f));
         split(x, y, cut, h, depth - 1);
         split(x + cut, y, w - cut, h, depth - 1);
       }
     }
     split(0, 0, W, H, p.count);
 
+    cx.globalAlpha = (p.opacity !== undefined ? p.opacity : 100) / 100;
+
     rects.forEach(([rx, ry, rw, rh]) => {
+      const pad = p.padding || 0;
+      rx += pad / 2; ry += pad / 2;
+      rw -= pad; rh -= pad;
+      if (rw <= 0 || rh <= 0) return;
+
       const useCol = rng() * 100 < p.density;
       cx.fillStyle = useCol ? pal[Math.floor(rng() * pal.length)] : p.bg;
       if (p.wobble > 0) {
@@ -43,15 +52,26 @@ TOOLS.blocks = {
         cx.lineTo(rx+rw + (rng()-0.5)*wo, ry+rh + (rng()-0.5)*wo);
         cx.lineTo(rx + (rng()-0.5)*wo, ry+rh + (rng()-0.5)*wo);
         cx.closePath(); cx.fill();
+      } else if (p.rounding > 0) {
+        cx.beginPath();
+        cx.roundRect(rx, ry, rw, rh, p.rounding);
+        cx.fill();
       } else {
         cx.fillRect(rx, ry, rw, rh);
       }
       if (p.stroke > 0) {
         cx.strokeStyle = p.lineColor;
         cx.lineWidth = p.stroke;
-        cx.strokeRect(rx + p.stroke/2, ry + p.stroke/2, rw - p.stroke, rh - p.stroke);
+        if (p.wobble == 0 && p.rounding > 0) {
+            cx.stroke();
+        } else {
+            cx.strokeRect(rx + p.stroke/2, ry + p.stroke/2, rw - p.stroke, rh - p.stroke);
+        }
       }
     });
+    cx.globalAlpha = 1.0;
+    cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+    cx.setLineDash([]); cx.shadowBlur = 0;
     if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
@@ -61,7 +81,9 @@ TOOLS.gradients = {
   name: 'Gradients', icon: '◑',
   render(C, cx, p) {
     const W = C.width, H = C.height;
-    const stops = p.stops || [[0,'#1a0533'],[1,'#7c5cfc']];
+    const pal = GS.getPalette(p.palette);
+    const stops = pal.map((c, i) => [i / (pal.length - 1 || 1), c]);
+
     const angle = (p.angle || 0) * Math.PI / 180;
     const id = cx.createImageData(W, H);
     const d = id.data;
@@ -69,11 +91,34 @@ TOOLS.gradients = {
     const ni = (p.noiseIntensity || 55) / 100;
     const cd = (p.curveDist || 70) / 100;
     const seed = (p.seed || 0) * 0.01;
+    const gType = p.gradientType || 'Linear';
+    const zoom = (p.zoom !== undefined ? p.zoom : 100) / 100;
+    const ox = (p.offsetX || 0) / 100;
+    const oy = (p.offsetY || 0) / 100;
+    const cx_point = 0.5 + ox;
+    const cy_point = 0.5 + oy;
 
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
-        let t = (x/W * Math.cos(angle) + y/H * Math.sin(angle));
-        const n = GS.fbm(x/W*ns + seed, y/H*ns + seed, p.detail||2) * ni;
+        const nx = x/W; const ny = y/H;
+        let t = 0;
+
+        if (gType === 'Linear') {
+            t = ((nx - 0.5 - ox) * Math.cos(angle) + (ny - 0.5 - oy) * Math.sin(angle)) / zoom + 0.5;
+        } else if (gType === 'Radial') {
+            const dx = nx - cx_point;
+            const dy = ny - cy_point;
+            t = Math.sqrt(dx*dx + dy*dy) * 2 / zoom;
+        } else if (gType === 'Conic') {
+            const dx = nx - cx_point;
+            const dy = ny - cy_point;
+            let a = Math.atan2(dy, dx);
+            if (a < 0) a += Math.PI * 2;
+            a = (a - angle + Math.PI*4) % (Math.PI*2);
+            t = a / (Math.PI * 2) / zoom;
+        }
+
+        const n = GS.fbm(nx*ns + seed, ny*ns + seed, p.detail||2) * ni;
         t = Math.max(0, Math.min(1, t + n * cd));
         const hex = GS.gradientAt(stops, t);
         const [r,g,b] = GS.hexToRgb(hex);
@@ -83,12 +128,23 @@ TOOLS.gradients = {
     }
     cx.putImageData(id, 0, 0);
 
+    const blendModes = {
+        'Normal': 'source-over',
+        'Multiply': 'multiply',
+        'Screen': 'screen',
+        'Overlay': 'overlay',
+        'Hard Light': 'hard-light'
+    };
+    cx.globalCompositeOperation = blendModes[p.blendMode || 'Normal'] || 'source-over';
+
     if (p.depth > 0) {
       const gr = cx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.7);
       gr.addColorStop(0, `rgba(255,255,255,${p.highlights/300})`);
       gr.addColorStop(1, `rgba(0,0,0,${p.shadows/200})`);
       cx.fillStyle = gr; cx.fillRect(0, 0, W, H);
     }
+    cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+    cx.setLineDash([]); cx.shadowBlur = 0;
     if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
@@ -114,6 +170,16 @@ TOOLS.lines = {
       const alpha = 1 - (rng()*(p.opacityVar||0)/100);
       cx.globalAlpha = Math.max(0.05, alpha);
       cx.lineWidth = Math.max(0.1, lw);
+      cx.lineCap = p.lineCap || 'round';
+      cx.lineJoin = p.lineJoin || 'round';
+      if (p.dashArray > 0) cx.setLineDash([p.dashArray, p.dashArray * 1.5]);
+      else cx.setLineDash([]);
+      if (p.glow > 0) {
+          cx.shadowBlur = p.glow;
+          cx.shadowColor = cx.strokeStyle;
+      } else {
+          cx.shadowBlur = 0;
+      }
       cx.strokeStyle = p.colorGradient
         ? GS.gradientAt([[0,p.lineColor],[1,p.lineColor2||p.lineColor]], t)
         : p.lineColor;
@@ -188,6 +254,8 @@ TOOLS.lines = {
       }
       cx.drawImage(tmp,0,0);
     }
+    cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+    cx.setLineDash([]); cx.shadowBlur = 0;
     if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
@@ -233,6 +301,8 @@ TOOLS.organic = {
       else cx.stroke();
     }
     cx.globalAlpha = 1;
+    cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+    cx.setLineDash([]); cx.shadowBlur = 0;
     if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
@@ -256,14 +326,22 @@ TOOLS.plotter = {
         const jy = (rng()-0.5) * ch * p.jitter;
         const pcx = mx + c*cw + cw/2 + jx;
         const pcy = mx + r*ch + ch/2 + jy;
-        const size = p.minSize + (p.maxSize - p.minSize) * n * (p.noiseIntensity||1);
+        let size = p.minSize + (p.maxSize - p.minSize) * n * (p.noiseIntensity||1);
+        if (p.scaleJit > 0) size *= (1 + (rng() - 0.5) * (p.scaleJit / 50));
+        size = Math.max(0.1, size);
+
         const col = pal[Math.floor(rng() * pal.length)];
         cx.strokeStyle = col; cx.fillStyle = col;
         cx.lineWidth = p.strokeWeight;
-        const rot = (p.rotation + (rng()-0.5)*p.wobble) * Math.PI/180;
+        const rot = (p.rotation + (rng()-0.5)*p.wobble + (rng()-0.5)*p.rotateJit) * Math.PI/180;
         cx.save(); cx.translate(pcx, pcy); cx.rotate(rot);
         cx.beginPath();
-        const s = p.shape;
+
+        let s = p.shape;
+        const shapes = ['Circle','Square','Triangle','Line','Cross','Diamond','Hexagon'];
+        if (p.shapeVar > 0 && rng() * 100 < p.shapeVar) {
+            s = shapes[Math.floor(rng() * shapes.length)];
+        }
         if (s==='Circle') cx.arc(0,0,size/2,0,Math.PI*2);
         else if (s==='Square') cx.rect(-size/2,-size/2,size,size);
         else if (s==='Triangle') { cx.moveTo(0,-size/2); cx.lineTo(size/2,size/2); cx.lineTo(-size/2,size/2); cx.closePath(); }
@@ -279,6 +357,8 @@ TOOLS.plotter = {
         cx.restore();
       }
     }
+    cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+    cx.setLineDash([]); cx.shadowBlur = 0;
     if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
@@ -332,6 +412,8 @@ TOOLS.topo = {
       cx.stroke();
     }
     cx.globalAlpha = 1;
+    cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+    cx.setLineDash([]); cx.shadowBlur = 0;
     if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
@@ -367,6 +449,8 @@ TOOLS.marble = {
       }
     }
     cx.putImageData(id, 0, 0);
+    cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+    cx.setLineDash([]); cx.shadowBlur = 0;
     if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };
@@ -521,6 +605,8 @@ TOOLS.noise = {
       }
     }
     cx.putImageData(id, 0, 0);
+    cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+    cx.setLineDash([]); cx.shadowBlur = 0;
     if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };

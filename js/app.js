@@ -11,11 +11,11 @@ const TOOL_ORDER = [
 
 // ── Default params ────────────────────────────────────────────
 const DEFAULTS = {
-  blocks:    { w:1200,h:1200,seed:42,type:'Mondrian',count:10,complexity:4,asymmetry:50,bg:'#ffffff',palette:'Mondrian',density:40,stroke:2,lineColor:'#111111',wobble:40,grain:30 },
-  gradients: { w:1200,h:1200,seed:0,angle:45,noiseScale:2,noiseIntensity:55,curveDist:70,detail:2,depth:60,highlights:50,shadows:55,grain:8,brightness:0,contrast:100,saturation:100,stops:[[0,'#1a0533'],[0.33,'#4a1080'],[0.66,'#7c5cfc'],[1,'#f5d0fe']] },
-  lines:     { w:1200,h:1200,seed:42,shape:'Sine Waves',frequency:0.026,amplitude:68,count:40,padding:50,thickness:1.5,bg:'#0a0a0f',bg2:'#1a0a3a',lineColor:'#00ff41',lineColor2:'#003a0f',colorGradient:true,bgGradient:false,weightVar:0,wobble:0,opacityVar:0,rotationJitter:0,colorDrift:0,freqVar:0,halftone:0,grain:0 },
-  organic:   { w:1200,h:1200,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,amplitude:55,frequency:0.056,harmonics:3,wobble:12,roughness:12,colorMode:'gradient',bg:'#050505',palette:'Terminal',grain:0,stops:[[0,'#00ff41'],[0.5,'#003a0f'],[1,'#00ff41']] },
-  plotter:   { w:1200,h:1200,seed:12345,type:'Dot Grid',columns:20,rows:20,jitter:0,shape:'Circle',minSize:4,maxSize:24,strokeWeight:1,filled:true,rotation:0,wobble:0,noiseScale:0.02,noiseIntensity:1,palette:'Terminal',bg:'#050505',margin:40,grain:0 },
+  blocks:    { w:1200,h:1200,seed:42,type:'Mondrian',count:10,complexity:4,asymmetry:50,bg:'#ffffff',palette:'Mondrian',density:40,stroke:2,lineColor:'#111111',wobble:40,grain:30,minSize:24,padding:0,rounding:0,opacity:100,splitBias:50 },
+  gradients: { w:1200,h:1200,seed:0,angle:45,noiseScale:2,noiseIntensity:55,curveDist:70,detail:2,depth:60,highlights:50,shadows:55,grain:8,brightness:0,contrast:100,saturation:100,palette:'Purple Dream',gradientType:'Linear',zoom:100,offsetX:0,offsetY:0,blendMode:'Normal' },
+  lines:     { w:1200,h:1200,seed:42,shape:'Sine Waves',frequency:0.026,amplitude:68,count:40,padding:50,thickness:1.5,bg:'#0a0a0f',bg2:'#1a0a3a',lineColor:'#00ff41',lineColor2:'#003a0f',colorGradient:true,bgGradient:false,weightVar:0,wobble:0,opacityVar:0,rotationJitter:0,colorDrift:0,freqVar:0,halftone:0,grain:0,dashArray:0,glow:0,lineCap:'round',lineJoin:'round' },
+  organic:   { w:1200,h:1200,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,amplitude:55,frequency:0.056,harmonics:3,wobble:12,roughness:12,colorMode:'gradient',bg:'#050505',palette:'Terminal',grain:0,shadowBlur:0,shadowX:0,shadowY:0,scale:100,stops:[[0,'#00ff41'],[0.5,'#003a0f'],[1,'#00ff41']] },
+  plotter:   { w:1200,h:1200,seed:12345,type:'Dot Grid',columns:20,rows:20,jitter:0,shape:'Circle',minSize:4,maxSize:24,strokeWeight:1,filled:true,rotation:0,wobble:0,noiseScale:0.02,noiseIntensity:1,palette:'Terminal',bg:'#050505',margin:40,grain:0,shapeVar:0,rotateJit:0,scaleJit:0 },
   topo:      { w:1200,h:1200,seed:12345,levels:20,noiseScale:0.008,octaves:4,falloff:0.5,strokeWeight:1.5,wobble:0,smoothing:50,bg:'#050505',mode:'Single',lineColor:'#00ff41',opacity:100,grain:0,margin:20 },
   marble:    { w:1200,h:1200,seed:0,noiseScale:1,wind:0,warp:0,fbmStrength:1,fbmDamping:1,grain:0,main:'#f0ece0',low:'#c8bfab',mid:'#9b8e7a',high:'#fff9f0',strength:1 },
   ascii:     { w:1200,h:1200,seed:0,fontSize:8,letterSpacing:0,lineHeight:1,charSet:'Standard',matchColors:false,bg:'#000000',color:'#00ff41',contrast:100,brightness:0,invert:false,grain:0 },
@@ -61,6 +61,9 @@ function S(id, name, opts, val) {
   const opts2 = opts.map(o => `<option value="${o}"${o===val?' selected':''}>${o}</option>`).join('');
   return `<div class="ctrl"><div class="ctrl-row"><span class="ctrl-lbl">${name}</span></div><select id="${id}">${opts2}</select></div>`;
 }
+function PAL(p, id="palette", name="Palette") {
+  return S(id, name, PAL_OPTS, p[id]) + (p[id] === "Custom" ? C2("custom1","C1",p.custom1||"#ff0000") + C2("custom2","C2",p.custom2||"#00ff00") + C2("custom3","C3",p.custom3||"#0000ff") + C2("custom4","C4",p.custom4||"#ffff00") + C2("custom5","C5",p.custom5||"#00ffff") : "");
+}
 function C2(id, name, val) {
   return `<div class="color-row"><span class="color-lbl">${name}</span><div class="color-swatch" style="background:${val||'#000'}"><input type="color" id="${id}" value="${val||'#000000'}"></div></div>`;
 }
@@ -96,23 +99,36 @@ function buildPanel(tool) {
         R('count','Depth',p.count,2,20,1) +
         R('complexity','Split Chance',p.complexity,1,10,0.1) +
         R('asymmetry','Asymmetry',p.asymmetry,0,100,1)
+        + R('minSize','Min Size',p.minSize,10,200,1)
+        + R('padding','Padding',p.padding,0,50,1)
+        + R('splitBias','Split Bias',p.splitBias,0,100,1)
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
+        PAL(p) +
         R('density','Color Density',p.density,0,100,1) +
         C2('lineColor','Border Color',p.lineColor)
+        + R('opacity','Opacity',p.opacity,0,100,1)
       ) +
       SEC('Stroke',
         R('stroke','Line Weight',p.stroke,0,20,0.5) +
         R('wobble','Edge Wobble',p.wobble,0,100,1)
+        + R('rounding','Corner Rounding',p.rounding,0,100,1)
       ) +
       SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
 
     gradients: CANVAS_SEC(p) +
+      SEC('Color',
+        PAL(p) +
+        S('gradientType','Type',['Linear','Radial','Conic'],p.gradientType) +
+        S('blendMode','Blend Mode',['Normal','Multiply','Screen','Overlay','Hard Light'],p.blendMode)
+      ) +
       SEC('Flow',
         R('seed','Seed',p.seed,0,9999,1) +
         R('angle','Angle',p.angle,0,360,1,'°') +
+        R('zoom','Zoom',p.zoom,10,300,1,'%') +
+        R('offsetX','Offset X',p.offsetX,-100,100,1,'%') +
+        R('offsetY','Offset Y',p.offsetY,-100,100,1,'%') +
         R('noiseScale','Noise Scale',p.noiseScale,0.1,12,0.1) +
         R('noiseIntensity','Intensity',p.noiseIntensity,0,100,1) +
         R('curveDist','Curve Distortion',p.curveDist,0,100,1) +
@@ -138,6 +154,9 @@ function buildPanel(tool) {
         R('count','Count',p.count,1,300,1) +
         R('padding','Padding',p.padding,0,200,1) +
         R('thickness','Thickness',p.thickness,0.1,20,0.1) +
+        R('dashArray','Dashes',p.dashArray,0,100,1) +
+        S('lineCap','Line Cap',['butt','round','square'],p.lineCap) +
+        S('lineJoin','Line Join',['miter','round','bevel'],p.lineJoin) +
         R('seed','Seed',p.seed,0,9999,1)
       ) +
       SEC('Background',
@@ -159,6 +178,7 @@ function buildPanel(tool) {
       ) +
       SEC('Effects',
         R('halftone','Halftone',p.halftone,0,30,1) +
+        R('glow','Glow',p.glow,0,50,1) +
         R('grain','Grain',p.grain,0,80,1)
       ),
 
@@ -167,7 +187,8 @@ function buildPanel(tool) {
         R('seed','Seed',p.seed,0,99999,1) +
         S('pathType','Type',['Waves','Filled','Curl','Strand'],p.pathType) +
         R('pathCount','Path Count',p.pathCount,1,200,1) +
-        R('lineWeight','Line Weight',p.lineWeight,0.1,80,0.5)
+        R('lineWeight','Line Weight',p.lineWeight,0.1,80,0.5) +
+        R('scale','Scale',p.scale,10,300,1,'%')
       ) +
       SEC('Algorithm',
         R('amplitude','Amplitude',p.amplitude,1,300,1) +
@@ -179,7 +200,12 @@ function buildPanel(tool) {
       SEC('Color',
         C2('bg','Background',p.bg) +
         S('colorMode','Mode',['gradient','palette'],p.colorMode) +
-        S('palette','Palette',PAL_OPTS,p.palette||'Terminal') + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '')
+        PAL(p)
+      ) +
+      SEC('Shadow',
+        R('shadowBlur','Shadow Blur',p.shadowBlur,0,100,1) +
+        R('shadowX','Shadow X',p.shadowX,-100,100,1) +
+        R('shadowY','Shadow Y',p.shadowY,-100,100,1)
       ) +
       SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
 
@@ -194,12 +220,15 @@ function buildPanel(tool) {
       ) +
       SEC('Shape',
         S('shape','Shape',['Circle','Square','Triangle','Line','Cross','Diamond','Hexagon'],p.shape) +
+        R('shapeVar','Shape Mix',p.shapeVar,0,100,1) +
         R('minSize','Min Size',p.minSize,1,80,1) +
         R('maxSize','Max Size',p.maxSize,1,150,1) +
         R('strokeWeight','Stroke',p.strokeWeight,0.1,10,0.1) +
         T('filled','Filled',p.filled) +
         R('rotation','Rotation',p.rotation,0,360,1,'°') +
-        R('wobble','Wobble',p.wobble,0,180,1,'°')
+        R('wobble','Wobble',p.wobble,0,180,1,'°') +
+        R('rotateJit','Rotation Jitter',p.rotateJit,0,180,1,'°') +
+        R('scaleJit','Scale Jitter',p.scaleJit,0,100,1,'%')
       ) +
       SEC('Noise',
         R('noiseScale','Scale',p.noiseScale,0.001,0.1,0.001) +
@@ -207,7 +236,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
+        PAL(p) +
         R('grain','Grain',p.grain,0,80,1)
       ),
 
@@ -287,7 +316,7 @@ function buildPanel(tool) {
         R('cellSize','Cell Size',p.cellSize,1,20,1,'px') +
         R('seed','Seed',p.seed,0,9999,1)
       ) +
-      SEC('Palette', S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '')),
+      SEC('Palette', PAL(p)),
 
     noise: CANVAS_SEC(p) +
       SEC('Noise',
@@ -326,7 +355,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
+        PAL(p) +
         C2('lineColor','Stroke Color',p.lineColor)
       ) +
       SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
@@ -352,7 +381,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
+        PAL(p) +
         R('grain','Grain',p.grain,0,80,1)
       ),
 
@@ -382,7 +411,7 @@ function buildPanel(tool) {
         S('metric','Distance',['Euclidean','Manhattan','Chebyshev'],p.metric)
       ) +
       SEC('Color',
-        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
+        PAL(p) +
         T('drawEdges','Draw Edges',p.drawEdges) +
         C2('edgeColor','Edge Color',p.edgeColor||'#000000')
       ) +
@@ -401,14 +430,14 @@ function buildPanel(tool) {
         R('juliaCi','C Imag',p.juliaCi,-2,2,0.01)
       ) +
       SEC('Color',
-        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
+        PAL(p) +
         R('colorCycles','Color Cycles',p.colorCycles,0,10,0.5)
       ),
 
     pixelSort: CANVAS_SEC(p) +
       SEC('Source',
         `<div class="upload-zone" id="ps-zone"><input type="file" id="ps-file" accept="image/*"><div>LOAD IMAGE</div></div>` +
-        S('palette','Base Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '')
+        PAL(p, 'palette', 'Base Palette')
       ) +
       SEC('Sort',
         S('direction','Direction',['Horizontal','Vertical','Both'],p.direction) +
@@ -426,7 +455,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
+        PAL(p) +
         R('grain','Grain',p.grain,0,80,1)
       ),
 
@@ -439,7 +468,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
+        PAL(p) +
         C2('lineColor','Edge Color',p.lineColor||'rgba(0,0,0,0.2)') +
         R('stroke','Edge Weight',p.stroke,0,6,0.25) +
         R('grain','Grain',p.grain,0,80,1)
@@ -493,7 +522,7 @@ function buildPanel(tool) {
       ) +
       SEC('Color',
         C2('bg','Background',p.bg) +
-        S('palette','Palette',PAL_OPTS,p.palette) + (p.palette === 'Custom' ? C2('custom1','C1',p.custom1||'#ff0000') + C2('custom2','C2',p.custom2||'#00ff00') + C2('custom3','C3',p.custom3||'#0000ff') + C2('custom4','C4',p.custom4||'#ffff00') + C2('custom5','C5',p.custom5||'#00ffff') : '') +
+        PAL(p) +
         R('grain','Grain',p.grain,0,80,1)
       ),
   };

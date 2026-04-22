@@ -6,7 +6,8 @@ const App = (() => {
 const TOOL_ORDER = [
   'blocks','gradients','lines','organic','plotter','topo','marble',
   'ascii','dither','noise','circles','typography','waves','voronoi',
-  'fractal','pixelSort','webImage','truchet','crystal','spirograph','flowField'
+  'fractal','pixelSort','truchet','crystal','spirograph','flowField',
+  'space','nature','clouds','paint','matrix'
 ];
 
 // ── Default params ────────────────────────────────────────────
@@ -31,7 +32,11 @@ const DEFAULTS = {
   crystal:   { w:1200,h:1200,seed:0,cols:12,rows:12,jitter:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.15)',stroke:0.5,grain:0 },
   spirograph:{ w:1200,h:1200,bg:'#050505',R:300,r:113,d:80,loops:15,steps:4000,stroke:1,grain:0,c1:'#00ff41',c2:'#003a0f',c3:'#7affaa' },
   flowField: { w:1200,h:1200,seed:0,count:500,life:80,steps:150,speed:2,scale:3,octaves:2,curl:1,weight:1,opacity:40,palette:'Terminal',bg:'#050505',grain:0 },
-  webImage:  { w:1200,h:1200,seed:100,grayscale:false,blur:0,tint:'#000000',tintOpacity:0 },
+  space:     { w:1200,h:1200,seed:42,stars:2000,starSize:2,glow:20,nebula:50,nebulaScale:2,palette:'Cyberpunk',bg1:'#0a0a2a',bg2:'#000000',grain:0 },
+  nature:    { w:1200,h:1200,seed:123,layers:4,amplitude:150,frequency:2,skyTop:'#87CEEB',skyBottom:'#E0F6FF',sunSize:60,sunX:0.7,sunY:0.3,sunColor:'#FFD700',sunGlow:50,trees:100,palette:'Forest',grain:0 },
+  clouds:    { w:1200,h:1200,seed:42,scale:3,octaves:5,cover:50,sharpness:0.9,bg1:'#4A90E2',bg2:'#87CEEB',cloudColor:'#ffffff',shadowColor:'#aaccff',grain:0 },
+  paint:     { w:1200,h:1200,seed:42,strokes:1500,length:80,thickness:30,scale:2,curl:1,opacity:80,bristles:20,palette:'Mondrian',bg:'#f0f0f0',grain:0 },
+  matrix:    { w:1200,h:1200,seed:42,fontSize:20,speed:1,length:25,time:0,headColor:'#ffffff',tailColor:'#00ff41',bg:'#000000',glow:10,grain:0 },
 };
 
 // ── State ─────────────────────────────────────────────────────
@@ -492,19 +497,6 @@ function buildPanel(tool) {
       SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
 
 
-    webImage: CANVAS_SEC(p) +
-      SEC('Image Source',
-        R('seed','Image ID (Seed)',p.seed,1,1000,1)
-      ) +
-      SEC('Filters',
-        T('grayscale','Grayscale',p.grayscale) +
-        R('blur','Blur',p.blur,0,20,1)
-      ) +
-      SEC('Tint',
-        C2('tint','Tint Color',p.tint) +
-        R('tintOpacity','Tint Opacity',p.tintOpacity,0,100,1)
-      ),
-
     flowField: CANVAS_SEC(p) +
       SEC('Particles',
         R('seed','Seed',p.seed,0,9999,1) +
@@ -523,6 +515,97 @@ function buildPanel(tool) {
       SEC('Color',
         C2('bg','Background',p.bg) +
         PAL(p) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    space: CANVAS_SEC(p) +
+      SEC('Cosmos',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('stars','Stars',p.stars,100,10000,100) +
+        R('starSize','Max Star Size',p.starSize,0.5,5,0.1) +
+        R('glow','Star Glow',p.glow,0,50,1)
+      ) +
+      SEC('Nebula',
+        R('nebula','Nebula Intensity',p.nebula,0,100,1) +
+        R('nebulaScale','Nebula Scale',p.nebulaScale,0.5,10,0.5) +
+        PAL(p)
+      ) +
+      SEC('Background',
+        C2('bg1','Core Background',p.bg1) +
+        C2('bg2','Edge Background',p.bg2) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    nature: CANVAS_SEC(p) +
+      SEC('Landscape',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('layers','Mountain Layers',p.layers,1,10,1) +
+        R('amplitude','Height',p.amplitude,10,500,5) +
+        R('frequency','Ruggedness',p.frequency,0.5,10,0.5) +
+        R('trees','Trees',p.trees,0,500,10)
+      ) +
+      SEC('Sky',
+        C2('skyTop','Sky Top',p.skyTop) +
+        C2('skyBottom','Sky Bottom',p.skyBottom) +
+        R('sunSize','Sun Size',p.sunSize,0,300,5) +
+        R('sunX','Sun X',p.sunX,0,1,0.01) +
+        R('sunY','Sun Y',p.sunY,0,1,0.01) +
+        C2('sunColor','Sun Color',p.sunColor) +
+        R('sunGlow','Sun Glow',p.sunGlow,0,100,1)
+      ) +
+      SEC('Colors',
+        PAL(p) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    clouds: CANVAS_SEC(p) +
+      SEC('Noise',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('scale','Scale',p.scale,0.5,15,0.5) +
+        R('octaves','Detail (Octaves)',p.octaves,1,8,1) +
+        R('cover','Cloud Cover',p.cover,0,100,1,'%') +
+        R('sharpness','Sharpness',p.sharpness,0.1,3,0.1)
+      ) +
+      SEC('Colors',
+        C2('bg1','Sky Top',p.bg1) +
+        C2('bg2','Sky Bottom',p.bg2) +
+        C2('cloudColor','Cloud Highlights',p.cloudColor) +
+        C2('shadowColor','Cloud Shadows',p.shadowColor) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    paint: CANVAS_SEC(p) +
+      SEC('Brush',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('strokes','Strokes',p.strokes,100,10000,100) +
+        R('length','Length',p.length,10,300,5) +
+        R('thickness','Thickness',p.thickness,1,100,1) +
+        R('bristles','Bristles Detail',p.bristles,0,100,1) +
+        R('opacity','Opacity',p.opacity,1,100,1,'%')
+      ) +
+      SEC('Flow',
+        R('scale','Flow Scale',p.scale,0.5,10,0.5) +
+        R('curl','Curl',p.curl,0.1,5,0.1)
+      ) +
+      SEC('Colors',
+        C2('bg','Background Canvas',p.bg) +
+        PAL(p) +
+        R('grain','Grain',p.grain,0,80,1)
+      ),
+
+    matrix: CANVAS_SEC(p) +
+      SEC('Code',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('fontSize','Font Size',p.fontSize,6,48,1) +
+        R('length','Trail Length',p.length,5,100,1) +
+        R('speed','Speed Var',p.speed,0.1,3,0.1) +
+        R('time','Time Offset',p.time,0,1000,1)
+      ) +
+      SEC('Colors',
+        C2('bg','Background',p.bg) +
+        C2('headColor','Head Color',p.headColor) +
+        C2('tailColor','Tail Color',p.tailColor) +
+        R('glow','Glow',p.glow,0,50,1) +
         R('grain','Grain',p.grain,0,80,1)
       ),
   };

@@ -1028,47 +1028,349 @@ TOOLS.flowField = {
   }
 };
 
-// ── 21. WEB IMAGE ──────────────────────────────────────────────
-TOOLS.webImage = {
-  name: 'Web Image', icon: '🌐',
+// ── 21. SPACE ─────────────────────────────────────────────────
+TOOLS.space = {
+  name: 'Space', icon: '✨',
   render(C, cx, p) {
     const W = C.width, H = C.height;
-    cx.fillStyle = p.bg || '#000'; cx.fillRect(0, 0, W, H);
+    const rng = GS.seededRng(p.seed);
+    const pal = GS.getPalette(p.palette);
 
-    const imgUrl = `https://picsum.photos/id/${p.seed}/${W}/${H}${p.grayscale ? '?grayscale' : ''}${p.blur > 0 ? (p.grayscale ? '&' : '?') + 'blur=' + p.blur : ''}`;
+    // Background gradient for deep space
+    const bgGrad = cx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H));
+    bgGrad.addColorStop(0, p.bg1 || '#0a0a2a');
+    bgGrad.addColorStop(1, p.bg2 || '#000000');
+    cx.fillStyle = bgGrad;
+    cx.fillRect(0, 0, W, H);
 
-    // We use a global cache to avoid infinite re-renders on slider drag
-    window.__webImageCache = window.__webImageCache || {};
+    // Nebula (FBM Noise)
+    if (p.nebula > 0) {
+      const id = cx.getImageData(0, 0, W, H);
+      const d = id.data;
+      const ns = p.nebulaScale || 2;
+      const c1 = GS.hexToRgb(pal[0]);
+      const c2 = GS.hexToRgb(pal[Math.min(1, pal.length - 1)]);
+      const intensity = p.nebula / 100;
 
-    if (window.__webImageCache.url !== imgUrl) {
-       // Draw loading state
-       cx.fillStyle = '#111'; cx.fillRect(0,0,W,H);
-       cx.fillStyle = '#fff'; cx.font = '20px Arial'; cx.fillText('Loading from internet...', W/2 - 100, H/2);
+      for(let y=0; y<H; y++) {
+        for(let x=0; x<W; x++) {
+          const nx = x/W * ns;
+          const ny = y/H * ns;
+          let n = (GS.fbm(nx + p.seed, ny + p.seed, 4) + 1) / 2;
+          n = Math.pow(n, 1.5) * intensity;
 
-       const img = new Image();
-       img.crossOrigin = 'Anonymous';
-       img.onload = () => {
-           window.__webImageCache = { url: imgUrl, img: img };
-           // force re-render once loaded
-           if (window.current_tool && window.current_tool() === 'webImage') {
-               requestAnimationFrame(() => drawWebImage(C, cx, p, img));
-           }
-           // We'll draw immediately anyway
-           drawWebImage(C, cx, p, img);
-       };
-       img.src = imgUrl;
-    } else {
-       drawWebImage(C, cx, p, window.__webImageCache.img);
+          const i = (y*W+x)*4;
+          d[i] = Math.min(255, d[i] + (c1[0] * n + c2[0] * n * 0.5));
+          d[i+1] = Math.min(255, d[i+1] + (c1[1] * n + c2[1] * n * 0.5));
+          d[i+2] = Math.min(255, d[i+2] + (c1[2] * n + c2[2] * n * 0.5));
+        }
+      }
+      cx.putImageData(id, 0, 0);
     }
 
-    function drawWebImage(C, cx, p, img) {
-        cx.drawImage(img, 0, 0, C.width, C.height);
-        if (p.tintOpacity > 0) {
-            cx.fillStyle = p.tint;
-            cx.globalAlpha = p.tintOpacity / 100;
-            cx.fillRect(0, 0, C.width, C.height);
-            cx.globalAlpha = 1;
+    // Stars
+    const starCount = p.stars || 1000;
+    for (let i = 0; i < starCount; i++) {
+      const x = rng() * W;
+      const y = rng() * H;
+      const r = rng() * rng() * (p.starSize || 2) + 0.5;
+      const alpha = 0.3 + rng() * 0.7;
+
+      cx.beginPath();
+      cx.arc(x, y, r, 0, Math.PI * 2);
+
+      // Star colors
+      let col = '#ffffff';
+      const colRand = rng();
+      if (colRand > 0.95) col = pal[Math.floor(rng() * pal.length)];
+      else if (colRand > 0.8) col = '#aaddff';
+      else if (colRand > 0.7) col = '#ffddaa';
+
+      cx.fillStyle = col;
+      cx.globalAlpha = alpha;
+
+      if (rng() > 0.9 && p.glow > 0) {
+        cx.shadowBlur = p.glow;
+        cx.shadowColor = col;
+      } else {
+        cx.shadowBlur = 0;
+      }
+
+      cx.fill();
+    }
+
+    cx.shadowBlur = 0;
+    cx.globalAlpha = 1;
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+  }
+};
+
+// ── 22. NATURE ────────────────────────────────────────────────
+TOOLS.nature = {
+  name: 'Nature', icon: '⛰',
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const rng = GS.seededRng(p.seed);
+    const pal = GS.getPalette(p.palette);
+
+    // Sky
+    const skyGrad = cx.createLinearGradient(0, 0, 0, H);
+    skyGrad.addColorStop(0, p.skyTop || '#87CEEB');
+    skyGrad.addColorStop(1, p.skyBottom || '#E0F6FF');
+    cx.fillStyle = skyGrad;
+    cx.fillRect(0, 0, W, H);
+
+    // Sun/Moon
+    if (p.sunSize > 0) {
+      const sx = W * (p.sunX || 0.5);
+      const sy = H * (p.sunY || 0.3);
+      cx.beginPath();
+      cx.arc(sx, sy, p.sunSize, 0, Math.PI*2);
+      cx.fillStyle = p.sunColor || '#FFD700';
+      if (p.sunGlow > 0) {
+          cx.shadowBlur = p.sunGlow;
+          cx.shadowColor = cx.fillStyle;
+      }
+      cx.fill();
+      cx.shadowBlur = 0;
+    }
+
+    // Mountains
+    const layers = p.layers || 3;
+    for (let l = 0; l < layers; l++) {
+      const t = l / (layers - 1 || 1); // 0 to 1
+
+      // Color based on depth (atmospheric perspective)
+      let c1 = GS.hexToRgb(pal[l % pal.length]);
+      let skyC = GS.hexToRgb(p.skyBottom || '#E0F6FF');
+
+      // Mix mountain color with sky color based on depth
+      const mix = 1 - t; // Further mountains (t=0) have more sky color
+      const r = Math.round(c1[0] * t + skyC[0] * mix);
+      const g = Math.round(c1[1] * t + skyC[1] * mix);
+      const b = Math.round(c1[2] * t + skyC[2] * mix);
+
+      cx.fillStyle = `rgb(${r},${g},${b})`;
+
+      const baseY = H * (0.4 + t * 0.4);
+      const amp = (p.amplitude || 100) * (1 - t * 0.3);
+      const freq = (p.frequency || 3) * (1 + t);
+
+      cx.beginPath();
+      cx.moveTo(0, H);
+
+      for (let x = 0; x <= W; x += 5) {
+        const nx = x / W * freq;
+        // Combine low freq and high freq noise for rugged mountains
+        const n1 = GS.fbm(nx + l * 10 + p.seed, l + p.seed, 3);
+        const y = baseY + n1 * amp;
+        cx.lineTo(x, y);
+      }
+
+      cx.lineTo(W, H);
+      cx.closePath();
+      cx.fill();
+
+      // Optional Trees on the closest layer
+      if (l === layers - 1 && p.trees > 0) {
+         cx.fillStyle = '#1a3a1a'; // Dark green
+         for (let i = 0; i < p.trees; i++) {
+             const tx = rng() * W;
+             const nx = tx / W * freq;
+             const n1 = GS.fbm(nx + l * 10 + p.seed, l + p.seed, 3);
+             const ty = baseY + n1 * amp;
+
+             const th = 10 + rng() * 30;
+             const tw = th * 0.4;
+
+             cx.beginPath();
+             cx.moveTo(tx, ty);
+             cx.lineTo(tx - tw/2, ty + th);
+             cx.lineTo(tx + tw/2, ty + th);
+             cx.closePath();
+             cx.fill();
+         }
+      }
+    }
+
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+  }
+};
+
+// ── 23. CLOUDS ────────────────────────────────────────────────
+TOOLS.clouds = {
+  name: 'Clouds', icon: '☁',
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+
+    // Base sky
+    const skyGrad = cx.createLinearGradient(0, 0, 0, H);
+    skyGrad.addColorStop(0, p.bg1 || '#4A90E2');
+    skyGrad.addColorStop(1, p.bg2 || '#87CEEB');
+    cx.fillStyle = skyGrad;
+    cx.fillRect(0, 0, W, H);
+
+    const id = cx.getImageData(0, 0, W, H);
+    const d = id.data;
+
+    const scale = p.scale || 3;
+    const octaves = p.octaves || 5;
+    const cover = (p.cover || 50) / 100; // 0 to 1
+    const sharpness = p.sharpness || 0.9;
+
+    const c1 = GS.hexToRgb(p.cloudColor || '#ffffff');
+    const c2 = GS.hexToRgb(p.shadowColor || '#aaccff');
+
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const nx = x / W * scale;
+        const ny = y / H * scale;
+
+        // FBM for cloud density
+        let n = (GS.fbm(nx + p.seed, ny + p.seed, octaves) + 1) / 2;
+
+        // Cloud mapping
+        let v = Math.max(0, n - (1 - cover));
+        v = Math.pow(v, sharpness) * 2;
+        v = Math.min(1, v);
+
+        if (v > 0) {
+            // Fake lighting / shading based on noise derivative
+            const dy = (GS.fbm(nx + p.seed, ny + 0.01 + p.seed, octaves) + 1) / 2;
+            const shadow = Math.max(0, n - dy) * 5;
+
+            const r = c1[0] * (1 - shadow) + c2[0] * shadow;
+            const g = c1[1] * (1 - shadow) + c2[1] * shadow;
+            const b = c1[2] * (1 - shadow) + c2[2] * shadow;
+
+            const i = (y * W + x) * 4;
+            // Alpha blend
+            d[i] = r * v + d[i] * (1 - v);
+            d[i+1] = g * v + d[i+1] * (1 - v);
+            d[i+2] = b * v + d[i+2] * (1 - v);
+        }
+      }
+    }
+    cx.putImageData(id, 0, 0);
+
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+  }
+};
+
+// ── 24. PAINT ─────────────────────────────────────────────────
+TOOLS.paint = {
+  name: 'Paint', icon: '🖌',
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const rng = GS.seededRng(p.seed);
+    const pal = GS.getPalette(p.palette);
+
+    cx.fillStyle = p.bg || '#f0f0f0';
+    cx.fillRect(0, 0, W, H);
+
+    const strokes = p.strokes || 1000;
+
+    for (let i = 0; i < strokes; i++) {
+        const x = rng() * W;
+        const y = rng() * H;
+
+        // Direction based on flow field
+        const angle = GS.fbm(x/W * (p.scale || 2) + p.seed, y/H * (p.scale || 2) + p.seed, 2) * Math.PI * 2 * (p.curl || 1);
+
+        const len = p.length * (0.5 + rng() * 0.5);
+        const thick = p.thickness * (0.5 + rng() * 1.5);
+
+        const cIdx = Math.floor(rng() * pal.length);
+        cx.fillStyle = pal[cIdx];
+
+        cx.save();
+        cx.translate(x, y);
+        cx.rotate(angle);
+
+        cx.globalAlpha = (p.opacity || 80) / 100;
+
+        // Brush stroke shape
+        cx.beginPath();
+        cx.ellipse(0, 0, len/2, thick/2, 0, 0, Math.PI * 2);
+        cx.fill();
+
+        // Bristle details
+        if (p.bristles > 0) {
+            cx.fillStyle = 'rgba(0,0,0,0.1)';
+            for(let b=0; b<p.bristles; b++) {
+                const bx = (rng() - 0.5) * len;
+                const by = (rng() - 0.5) * thick;
+                cx.fillRect(bx, by, len * rng() * 0.5, 1);
+            }
+        }
+
+        cx.restore();
+    }
+
+    cx.globalAlpha = 1;
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+  }
+};
+
+// ── 25. MATRIX ────────────────────────────────────────────────
+TOOLS.matrix = {
+  name: 'Matrix', icon: '01',
+  render(C, cx, p) {
+    const W = C.width, H = C.height;
+    const rng = GS.seededRng(p.seed);
+
+    cx.fillStyle = p.bg || '#000000';
+    cx.fillRect(0, 0, W, H);
+
+    const fs = Math.max(8, p.fontSize || 16);
+    cx.font = `${fs}px "IBM Plex Mono", monospace`;
+    cx.textBaseline = 'top';
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*';
+    const cols = Math.floor(W / fs);
+
+    for (let i = 0; i < cols; i++) {
+        const x = i * fs;
+
+        // Column properties based on noise/seed
+        const n = GS.noise2(i * 0.1, p.seed);
+        const startY = (n * H * 2) - H; // Start position
+        const speed = (p.speed || 1) * (0.5 + Math.abs(GS.noise2(i * 0.2, p.seed+1)));
+        const length = Math.floor((p.length || 20) * (0.5 + Math.abs(GS.noise2(i * 0.3, p.seed+2))));
+
+        // Animate based on "time" (we use a phase offset parameter)
+        const timeOffset = (p.time || 0) * speed * fs;
+        let headY = (startY + timeOffset) % (H + length * fs);
+        if (headY < 0) headY += (H + length * fs);
+
+        for (let j = 0; j < length; j++) {
+            const y = headY - j * fs;
+            if (y < -fs || y > H) continue;
+
+            const charIdx = Math.floor(rng() * chars.length);
+            const char = chars[charIdx];
+
+            // Brightness fades out
+            const ratio = 1 - (j / length);
+
+            if (j === 0) {
+                cx.fillStyle = p.headColor || '#ffffff';
+                if (p.glow > 0) {
+                    cx.shadowBlur = p.glow;
+                    cx.shadowColor = p.headColor;
+                }
+            } else {
+                // Main color with fading opacity
+                const rgb = GS.hexToRgb(p.tailColor || '#00ff41');
+                cx.fillStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${ratio})`;
+                cx.shadowBlur = 0;
+            }
+
+            cx.fillText(char, x, y);
         }
     }
+
+    cx.shadowBlur = 0;
+    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
   }
 };

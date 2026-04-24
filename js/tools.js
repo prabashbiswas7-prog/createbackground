@@ -502,6 +502,7 @@ TOOLS.ascii = {
         }
       }
     }
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -575,6 +576,7 @@ TOOLS.dither = {
         }
       }
     }
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -837,7 +839,6 @@ TOOLS.pixelSort = {
       const gr=cx.createLinearGradient(0,0,W,H);
       pal.forEach((c,i,a)=>gr.addColorStop(i/(a.length-1||1),c));
       cx.fillStyle=gr; cx.fillRect(0,0,W,H);
-      GS.applyGrain(cx,W,H,25);
     } else { cx.drawImage(src,0,0,W,H); }
 
     const id=cx.getImageData(0,0,W,H); const d=id.data;
@@ -879,6 +880,7 @@ TOOLS.pixelSort = {
       }
     }
     cx.putImageData(id,0,0);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 

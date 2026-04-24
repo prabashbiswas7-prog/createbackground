@@ -125,7 +125,7 @@ function buildPanel(tool) {
         R('wobble','Edge Wobble',p.wobble,0,100,1)
         + R('rounding','Corner Rounding',p.rounding,0,100,1)
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      SEC('Effects', ),
 
     gradients: CANVAS_SEC(p) +
       SEC('Color',
@@ -150,7 +150,7 @@ function buildPanel(tool) {
         R('shadows','Shadows',p.shadows,0,100,1)
       ) +
       SEC('Adjustments',
-        R('grain','Grain',p.grain,0,40,1) +
+
         R('brightness','Brightness',p.brightness,-100,100,1) +
         R('contrast','Contrast',p.contrast,50,200,1) +
         R('saturation','Saturation',p.saturation,0,200,1)
@@ -189,7 +189,7 @@ function buildPanel(tool) {
       SEC('Effects',
         R('halftone','Halftone',p.halftone,0,30,1) +
         R('glow','Glow',p.glow,0,50,1) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     organic: CANVAS_SEC(p) +
@@ -217,7 +217,7 @@ function buildPanel(tool) {
         R('shadowX','Shadow X',p.shadowX,-100,100,1) +
         R('shadowY','Shadow Y',p.shadowY,-100,100,1)
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      SEC('Effects', ),
 
     plotter: CANVAS_SEC(p) +
       SEC('Grid',
@@ -247,7 +247,7 @@ function buildPanel(tool) {
       SEC('Color',
         C2('bg','Background',p.bg) +
         PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     topo: CANVAS_SEC(p) +
@@ -269,7 +269,7 @@ function buildPanel(tool) {
         R('opacity','Opacity',p.opacity,10,100,1,'%')
       ) +
       SEC('Effects',
-        R('grain','Grain',p.grain,0,80,1) +
+
         R('margin','Margin',p.margin,0,100,1)
       ),
 
@@ -289,7 +289,7 @@ function buildPanel(tool) {
         R('fbmStrength','FBM Strength',p.fbmStrength,0,5,0.1) +
         R('fbmDamping','FBM Damping',p.fbmDamping,0,5,0.1)
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,60,1)),
+      SEC('Effects', ),
 
     ascii: CANVAS_SEC(p) +
       SEC('Source',
@@ -344,7 +344,7 @@ function buildPanel(tool) {
         C2('c1','Dark Color',p.c1) +
         C2('c2','Light Color',p.c2)
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      SEC('Effects', ),
 
     circles: CANVAS_SEC(p) +
       SEC('Type',
@@ -368,7 +368,7 @@ function buildPanel(tool) {
         PAL(p) +
         C2('lineColor','Stroke Color',p.lineColor)
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      SEC('Effects', ),
 
     typography: CANVAS_SEC(p) +
       SEC('Text',
@@ -392,7 +392,7 @@ function buildPanel(tool) {
       SEC('Color',
         C2('bg','Background',p.bg) +
         PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     waves: CANVAS_SEC(p) +
@@ -412,7 +412,7 @@ function buildPanel(tool) {
         C2('c1','Wave Start',p.c1||'#0e4d68') +
         C2('c2','Wave End',p.c2||'#64dfb8')
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      SEC('Effects', ),
 
     voronoi: CANVAS_SEC(p) +
       SEC('Points',
@@ -425,7 +425,7 @@ function buildPanel(tool) {
         T('drawEdges','Draw Edges',p.drawEdges) +
         C2('edgeColor','Edge Color',p.edgeColor||'#000000')
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      SEC('Effects', ),
 
     fractal: CANVAS_SEC(p) +
       SEC('Type',
@@ -466,7 +466,7 @@ function buildPanel(tool) {
       SEC('Color',
         C2('bg','Background',p.bg) +
         PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     crystal: CANVAS_SEC(p) +
@@ -481,7 +481,7 @@ function buildPanel(tool) {
         PAL(p) +
         C2('lineColor','Edge Color',p.lineColor||'rgba(0,0,0,0.2)') +
         R('stroke','Edge Weight',p.stroke,0,6,0.25) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     spirograph: CANVAS_SEC(p) +
@@ -499,7 +499,7 @@ function buildPanel(tool) {
         C2('c2','Color Mid',p.c2||'#003a0f') +
         C2('c3','Color End',p.c3||'#7affaa')
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      SEC('Effects', ),
 
 
     flowField: CANVAS_SEC(p) +
@@ -520,7 +520,7 @@ function buildPanel(tool) {
       SEC('Color',
         C2('bg','Background',p.bg) +
         PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     space: CANVAS_SEC(p) +
@@ -538,7 +538,7 @@ function buildPanel(tool) {
       SEC('Background',
         C2('bg1','Core Background',p.bg1) +
         C2('bg2','Edge Background',p.bg2) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     nature: CANVAS_SEC(p) +
@@ -560,7 +560,7 @@ function buildPanel(tool) {
       ) +
       SEC('Colors',
         PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     clouds: CANVAS_SEC(p) +
@@ -576,7 +576,7 @@ function buildPanel(tool) {
         C2('bg2','Sky Bottom',p.bg2) +
         C2('cloudColor','Cloud Highlights',p.cloudColor) +
         C2('shadowColor','Cloud Shadows',p.shadowColor) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     paint: CANVAS_SEC(p) +
@@ -595,7 +595,7 @@ function buildPanel(tool) {
       SEC('Colors',
         C2('bg','Background Canvas',p.bg) +
         PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
 
     matrix: CANVAS_SEC(p) +
@@ -611,7 +611,7 @@ function buildPanel(tool) {
         C2('headColor','Head Color',p.headColor) +
         C2('tailColor','Tail Color',p.tailColor) +
         R('glow','Glow',p.glow,0,50,1) +
-        R('grain','Grain',p.grain,0,80,1)
+
       ),
   };
   return panels[tool] || SEC('Controls', '<p style="color:var(--text4);font-size:10px;padding:4px">No controls for this tool.</p>');

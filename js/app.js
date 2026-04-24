@@ -612,13 +612,6 @@ function buildPanel(tool) {
   return panels[tool] || SEC('Controls', '<p style="color:var(--text4);font-size:10px;padding:4px">No controls for this tool.</p>');
 }
 
-// ── Mobile Drawer ───────────────────────────────────────────────
-window.closeMobileDrawer = function() {
-  const leftSidebar = document.getElementById('left-sidebar');
-  const mobileOverlay = document.getElementById('mobile-overlay');
-  if (leftSidebar) leftSidebar.classList.remove('show');
-  if (mobileOverlay) mobileOverlay.classList.remove('show');
-};
 
 // ── Switch tool ───────────────────────────────────────────────
 function switchTool(id) {
@@ -640,80 +633,10 @@ function switchTool(id) {
       h.addEventListener('click', () => h.closest('.sec').classList.toggle('closed'));
     });
 
-    if (window.innerWidth <= 768) {
-      if (typeof window.closeMobileDrawer === 'function') window.closeMobileDrawer();
-      setupMobileTabs();
-    }
   }
   schedRender();
 }
 
-// ── Mobile Tabs ───────────────────────────────────────────────
-function setupMobileTabs() {
-  const sc = document.getElementById('sidebar-content');
-  const tabsContainer = document.getElementById('mobile-tabs');
-  if (!sc || !tabsContainer) return;
-
-  const sections = Array.from(sc.querySelectorAll('.sec'));
-  tabsContainer.innerHTML = ''; // Clear existing tabs
-
-  if (sections.length === 0) return;
-
-  sections.forEach((sec, index) => {
-    // Ensure they aren't visually closed (which hides content via display:none)
-    sec.classList.remove('closed');
-
-    // Get the title from the section header
-    const titleEl = sec.querySelector('.sec-title');
-    const titleText = titleEl ? titleEl.textContent : `Tab ${index + 1}`;
-
-    // Create tab button
-    const btn = document.createElement('button');
-    btn.className = 'mobile-tab-btn';
-    if (index === 0) btn.classList.add('active');
-    btn.textContent = titleText;
-
-    btn.addEventListener('click', () => {
-      switchMobileTab(index, sections, tabsContainer);
-    });
-
-    tabsContainer.appendChild(btn);
-
-    // Initial setup: first tab is active, rest are to the right
-    sec.classList.remove('mobile-active', 'mobile-left', 'mobile-right');
-    if (index === 0) {
-      sec.classList.add('mobile-active');
-    } else {
-      sec.classList.add('mobile-right');
-    }
-  });
-}
-
-function switchMobileTab(activeIndex, sections, tabsContainer) {
-  // Update buttons
-  const buttons = Array.from(tabsContainer.querySelectorAll('.mobile-tab-btn'));
-  buttons.forEach((btn, idx) => {
-    if (idx === activeIndex) {
-      btn.classList.add('active');
-      // Ensure the active button is visible in the scroll view
-      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    } else {
-      btn.classList.remove('active');
-    }
-  });
-
-  // Update panels with slide logic
-  sections.forEach((sec, idx) => {
-    sec.classList.remove('mobile-active', 'mobile-left', 'mobile-right');
-    if (idx === activeIndex) {
-      sec.classList.add('mobile-active');
-    } else if (idx < activeIndex) {
-      sec.classList.add('mobile-left');
-    } else {
-      sec.classList.add('mobile-right');
-    }
-  });
-}
 
 // ── Bind controls ─────────────────────────────────────────────
 function bindSection(tool) {
@@ -1012,25 +935,6 @@ function init() {
     if ((e.ctrlKey||e.metaKey) && e.key==='r') { e.preventDefault(); randomize(); }
   });
 
-  // Mobile UI Interactivity
-  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-  const leftSidebar = document.getElementById('left-sidebar');
-  const mobileOverlay = document.getElementById('mobile-overlay');
-
-  function toggleMobileDrawer() {
-    if (!leftSidebar || !mobileOverlay) return;
-    leftSidebar.classList.toggle('show');
-    mobileOverlay.classList.toggle('show');
-  }
-
-
-  if (mobileMenuBtn) {
-    mobileMenuBtn.addEventListener('click', toggleMobileDrawer);
-  }
-
-  if (mobileOverlay) {
-    mobileOverlay.addEventListener('click', window.closeMobileDrawer);
-  }
 
   // Boot animation
   const fill = document.getElementById('boot-fill');

@@ -175,6 +175,42 @@ function applyGrain(ctx, w, h, amount) {
   ctx.putImageData(imageData, 0, 0);
 }
 
+function applyPostFX(cx, w, h, p) {
+    if (p.blur > 0) {
+      const blurAmount = (p.blur / 100) * 10;
+      cx.save();
+      cx.filter = 'blur(' + blurAmount + 'px)';
+      cx.globalAlpha = 0.5;
+      cx.drawImage(cx.canvas, 0, 0);
+      cx.restore();
+    }
+
+    if (p.vignette > 0) {
+      const vAmount = p.vignette / 100;
+      cx.save();
+      const grad = cx.createRadialGradient(w/2, h/2, Math.min(w,h)*0.3, w/2, h/2, Math.min(w,h)*0.8);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(0,0,0,' + (vAmount * 0.8) + ')');
+      cx.fillStyle = grad;
+      cx.fillRect(0, 0, w, h);
+      cx.restore();
+    }
+
+    if (p.smoothness > 0) {
+        const smoothAmount = (p.smoothness / 100);
+        cx.save();
+        cx.globalAlpha = smoothAmount * 0.3;
+        cx.globalCompositeOperation = 'soft-light';
+        cx.drawImage(cx.canvas, 0, 0);
+        cx.restore();
+    }
+
+    if (p.grain > 0) {
+      applyGrain(cx, w, h, p.grain);
+    }
+}
+
+
 // ── Export ────────────────────────────────────────────────────
 function exportPNG(canvas, name) {
   const a = document.createElement('a');
@@ -221,7 +257,7 @@ return {
   seededRng, noise2, fbm,
   hexToRgb, rgbToHex, hslToRgb, rgbToHsl, lerpHex, gradientAt,
   PALETTES, PALETTE_NAMES, getPalette, randPalette,
-  SIZES, applyGrain,
+  SIZES, applyGrain, applyPostFX,
   exportPNG, exportJPG, exportWebP, exportSVG, toast
 };
 })();

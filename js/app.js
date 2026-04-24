@@ -90,7 +90,12 @@ function CANVAS_SEC(p) {
   <input type="number" id="cw" value="${p.w}" min="200" max="4096" style="width:70px">
   <span>×</span>
   <input type="number" id="ch" value="${p.h}" min="200" max="4096" style="width:70px">
-</div>`);
+</div>`) +
+  SEC('Global FX',
+    R('blur', 'Blur', p.blur || 0, 0, 100, 1) +
+    R('vignette', 'Vignette', p.vignette || 0, 0, 100, 1) +
+    R('smoothness', 'Smoothness', p.smoothness || 0, 0, 100, 1)
+  );
 }
 const PAL_OPTS = GS.PALETTE_NAMES;
 

@@ -72,7 +72,7 @@ TOOLS.blocks = {
     cx.globalAlpha = 1.0;
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
     cx.setLineDash([]); cx.shadowBlur = 0;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -145,7 +145,7 @@ TOOLS.gradients = {
     }
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
     cx.setLineDash([]); cx.shadowBlur = 0;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -256,7 +256,7 @@ TOOLS.lines = {
     }
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
     cx.setLineDash([]); cx.shadowBlur = 0;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -303,7 +303,7 @@ TOOLS.organic = {
     cx.globalAlpha = 1;
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
     cx.setLineDash([]); cx.shadowBlur = 0;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -359,7 +359,7 @@ TOOLS.plotter = {
     }
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
     cx.setLineDash([]); cx.shadowBlur = 0;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -414,7 +414,7 @@ TOOLS.topo = {
     cx.globalAlpha = 1;
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
     cx.setLineDash([]); cx.shadowBlur = 0;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -451,7 +451,7 @@ TOOLS.marble = {
     cx.putImageData(id, 0, 0);
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
     cx.setLineDash([]); cx.shadowBlur = 0;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -607,7 +607,7 @@ TOOLS.noise = {
     cx.putImageData(id, 0, 0);
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
     cx.setLineDash([]); cx.shadowBlur = 0;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -657,7 +657,7 @@ TOOLS.circles = {
       }
     }
     cx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -708,7 +708,7 @@ TOOLS.typography = {
       cx.shadowBlur=0;
     }
     cx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -739,7 +739,7 @@ TOOLS.waves = {
       cx.fill();
     }
     cx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -781,7 +781,7 @@ TOOLS.voronoi = {
       }
       cx.putImageData(out,0,0);
     }
-    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -923,7 +923,7 @@ TOOLS.truchet = {
         cx.restore();
       }
     }
-    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -959,7 +959,7 @@ TOOLS.crystal = {
         if(p.stroke>0){cx.strokeStyle=p.lineColor||'rgba(0,0,0,0.2)';cx.lineWidth=p.stroke;cx.stroke();}
       });
     }
-    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -989,7 +989,7 @@ TOOLS.spirograph = {
       }
       prevX=x; prevY=y;
     }
-    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -1024,7 +1024,7 @@ TOOLS.flowField = {
       }
     }
     cx.globalAlpha=1;
-    if(p.grain>0) GS.applyGrain(cx,W,H,p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -1101,7 +1101,7 @@ TOOLS.space = {
 
     cx.shadowBlur = 0;
     cx.globalAlpha = 1;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -1193,7 +1193,7 @@ TOOLS.nature = {
       }
     }
 
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -1253,7 +1253,7 @@ TOOLS.clouds = {
     }
     cx.putImageData(id, 0, 0);
 
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -1308,7 +1308,7 @@ TOOLS.paint = {
     }
 
     cx.globalAlpha = 1;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };
 
@@ -1371,6 +1371,6 @@ TOOLS.matrix = {
     }
 
     cx.shadowBlur = 0;
-    if (p.grain > 0) GS.applyGrain(cx, W, H, p.grain);
+    GS.applyPostFX(cx, W, H, p);
   }
 };

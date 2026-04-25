@@ -132,7 +132,7 @@ const PALETTES = {
   'Retro':       ['#2b0a3d','#7b1fa2','#e91e63','#ff9800','#ffeb3b'],
   'Purple Dream':['#1a0533','#4a1080','#7c5cfc','#c084fc','#f5d0fe'],
   'CGA':         ['#000000','#0000aa','#00aa00','#00aaaa','#aa0000'],
-  'Custom':      ['#ff0000','#00ff00','#0000ff','#ffff00','#00ffff'],
+  'Custom':      ['#000000','#003a0f','#00ff41','#7affaa','#ffffff'] // Default fallback if no custom colors
 };
 
 const PALETTE_NAMES = Object.keys(PALETTES);
@@ -143,7 +143,10 @@ function getPalette(n, p_obj) {
       if (p.customColors && p.customColors.length > 0) {
         return [...p.customColors];
       }
-      return [p.custom1||'#ff0000', p.custom2||'#00ff00', p.custom3||'#0000ff', p.custom4||'#ffff00', p.custom5||'#00ffff'];
+      // Fallback gracefully without hardcoded ugly colors
+      return p.custom1 ?
+        [p.custom1, p.custom2, p.custom3, p.custom4, p.custom5] :
+        [...PALETTES['Terminal']];
   }
   return PALETTES[n] || PALETTES['Terminal'];
 }

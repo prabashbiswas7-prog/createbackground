@@ -12,31 +12,31 @@ const TOOL_ORDER = [
 
 // ── Default params ────────────────────────────────────────────
 const DEFAULTS = {
-  blocks:    { w:1200,h:1200,seed:42,type:'Mondrian',count:10,complexity:4,asymmetry:50,bg:'#ffffff',palette:'Mondrian',density:40,stroke:2,lineColor:'#111111',wobble:40,grain:30,minSize:24,padding:0,rounding:0,opacity:100,splitBias:50 },
-  gradients: { w:1200,h:1200,seed:0,angle:45,noiseScale:2,noiseIntensity:55,curveDist:70,detail:2,depth:60,highlights:50,shadows:55,grain:8,brightness:0,contrast:100,saturation:100,palette:'Purple Dream',gradientType:'Linear',zoom:100,offsetX:0,offsetY:0,blendMode:'Normal' },
-  lines:     { w:1200,h:1200,seed:42,shape:'Sine Waves',frequency:0.026,amplitude:68,count:40,padding:50,thickness:1.5,bg:'#0a0a0f',bg2:'#1a0a3a',lineColor:'#00ff41',lineColor2:'#003a0f',colorGradient:true,bgGradient:false,weightVar:0,wobble:0,opacityVar:0,rotationJitter:0,colorDrift:0,freqVar:0,halftone:0,grain:0,dashArray:0,glow:0,lineCap:'round',lineJoin:'round' },
-  organic:   { w:1200,h:1200,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,amplitude:55,frequency:0.056,harmonics:3,wobble:12,roughness:12,colorMode:'gradient',bg:'#050505',palette:'Terminal',grain:0,shadowBlur:0,shadowX:0,shadowY:0,scale:100,stops:[[0,'#00ff41'],[0.5,'#003a0f'],[1,'#00ff41']] },
-  plotter:   { w:1200,h:1200,seed:12345,type:'Dot Grid',columns:20,rows:20,jitter:0,shape:'Circle',minSize:4,maxSize:24,strokeWeight:1,filled:true,rotation:0,wobble:0,noiseScale:0.02,noiseIntensity:1,palette:'Terminal',bg:'#050505',margin:40,grain:0,shapeVar:0,rotateJit:0,scaleJit:0 },
-  topo:      { w:1200,h:1200,seed:12345,levels:20,noiseScale:0.008,octaves:4,falloff:0.5,strokeWeight:1.5,wobble:0,smoothing:50,bg:'#050505',mode:'Single',lineColor:'#00ff41',opacity:100,grain:0,margin:20 },
-  marble:    { w:1200,h:1200,seed:0,noiseScale:1,wind:0,warp:0,fbmStrength:1,fbmDamping:1,grain:0,main:'#f0ece0',low:'#c8bfab',mid:'#9b8e7a',high:'#fff9f0',strength:1 },
-  ascii:     { w:1200,h:1200,seed:0,fontSize:8,letterSpacing:0,lineHeight:1,charSet:'Standard',matchColors:false,bg:'#000000',color:'#00ff41',contrast:100,brightness:0,invert:false,grain:0 },
+  blocks:    { w:1200,h:1200,seed:42,type:'Mondrian',count:10,complexity:4,asymmetry:50,bg:'#ffffff',palette:'Mondrian',density:40,stroke:2,lineColor:'#111111',wobble:40,minSize:24,padding:0,rounding:0,opacity:100,splitBias:50 },
+  gradients: { w:1200,h:1200,seed:0,angle:45,noiseScale:2,noiseIntensity:55,curveDist:70,detail:2,depth:60,highlights:50,shadows:55,brightness:0,contrast:100,saturation:100,palette:'Purple Dream',gradientType:'Linear',zoom:100,offsetX:0,offsetY:0,blendMode:'Normal' },
+  lines:     { w:1200,h:1200,seed:42,shape:'Sine Waves',frequency:0.026,amplitude:68,count:40,padding:50,thickness:1.5,bg:'#0a0a0f',bg2:'#1a0a3a',lineColor:'#00ff41',lineColor2:'#003a0f',colorGradient:true,bgGradient:false,weightVar:0,wobble:0,opacityVar:0,rotationJitter:0,colorDrift:0,freqVar:0,halftone:0,dashArray:0,glow:0,lineCap:'round',lineJoin:'round' },
+  organic:   { w:1200,h:1200,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,amplitude:55,frequency:0.056,harmonics:3,wobble:12,roughness:12,colorMode:'gradient',bg:'#050505',palette:'Terminal',shadowBlur:0,shadowX:0,shadowY:0,scale:100,stops:[[0,'#00ff41'],[0.5,'#003a0f'],[1,'#00ff41']] },
+  plotter:   { w:1200,h:1200,seed:12345,type:'Dot Grid',columns:20,rows:20,jitter:0,shape:'Circle',minSize:4,maxSize:24,strokeWeight:1,filled:true,rotation:0,wobble:0,noiseScale:0.02,noiseIntensity:1,palette:'Terminal',bg:'#050505',margin:40,shapeVar:0,rotateJit:0,scaleJit:0 },
+  topo:      { w:1200,h:1200,seed:12345,levels:20,noiseScale:0.008,octaves:4,falloff:0.5,strokeWeight:1.5,wobble:0,smoothing:50,bg:'#050505',mode:'Single',lineColor:'#00ff41',opacity:100,margin:20 },
+  marble:    { w:1200,h:1200,seed:0,noiseScale:1,wind:0,warp:0,fbmStrength:1,fbmDamping:1,main:'#f0ece0',low:'#c8bfab',mid:'#9b8e7a',high:'#fff9f0',strength:1 },
+  ascii:     { w:1200,h:1200,seed:0,fontSize:8,letterSpacing:0,lineHeight:1,charSet:'Standard',matchColors:false,bg:'#000000',color:'#00ff41',contrast:100,brightness:0,invert:false },
   dither:    { w:1200,h:1200,seed:0,palette:'Game Boy',sourceType:'Gradient',pattern:'Bayer 4x4',shape:'Square',cellSize:2 },
-  noise:     { w:1200,h:1200,seed:0,scale:4,octaves:4,warp:0,grain:0,ridged:false,terraced:false,terraces:8,c1:'#050505',c2:'#00ff41',stops:[[0,'#050505'],[0.5,'#003a0f'],[1,'#00ff41']] },
-  circles:   { w:1200,h:1200,seed:0,type:'Concentric',count:20,cx:50,cy:50,minR:8,maxR:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.3)',stroke:1,filled:false,pack:true,rows:8,cols:8,grain:0 },
-  typography:{ w:1200,h:1200,seed:0,text:'GENSTUDIO',type:'Scatter',font:'IBM Plex Mono',weight:'bold',count:200,minSize:10,maxSize:80,rotation:360,spacing:2,lineHeight:1.2,glow:0,palette:'Terminal',bg:'#050505',grain:0 },
-  waves:     { w:1200,h:1200,seed:0,layers:12,amplitude:60,frequency:2,harmonics:3,phase:0,offset:0,noise:0,opacity:70,grain:0,bg:'#0f1c2e',c1:'#0e4d68',c2:'#64dfb8',stops:[[0,'#0e4d68'],[0.5,'#1a9e8c'],[1,'#64dfb8']] },
-  voronoi:   { w:1200,h:1200,seed:0,count:40,palette:'Terminal',metric:'Euclidean',drawEdges:true,edgeColor:'#000000',grain:0 },
-  fractal:   { w:1200,h:1200,type:'Mandelbrot',cx:-0.5,cy:0,zoom:1,iterations:80,juliaC:-0.7,juliaCi:0.27,colorCycles:1,palette:'Cyberpunk',grain:0 },
+  noise:     { w:1200,h:1200,seed:0,scale:4,octaves:4,warp:0,ridged:false,terraced:false,terraces:8,c1:'#050505',c2:'#00ff41',stops:[[0,'#050505'],[0.5,'#003a0f'],[1,'#00ff41']] },
+  circles:   { w:1200,h:1200,seed:0,type:'Concentric',count:20,cx:50,cy:50,minR:8,maxR:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.3)',stroke:1,filled:false,pack:true,rows:8,cols:8 },
+  typography:{ w:1200,h:1200,seed:0,text:'GENSTUDIO',type:'Scatter',font:'IBM Plex Mono',weight:'bold',count:200,minSize:10,maxSize:80,rotation:360,spacing:2,lineHeight:1.2,glow:0,palette:'Terminal',bg:'#050505' },
+  waves:     { w:1200,h:1200,seed:0,layers:12,amplitude:60,frequency:2,harmonics:3,phase:0,offset:0,noise:0,opacity:70,bg:'#0f1c2e',c1:'#0e4d68',c2:'#64dfb8',stops:[[0,'#0e4d68'],[0.5,'#1a9e8c'],[1,'#64dfb8']] },
+  voronoi:   { w:1200,h:1200,seed:0,count:40,palette:'Terminal',metric:'Euclidean',drawEdges:true,edgeColor:'#000000' },
+  fractal:   { w:1200,h:1200,type:'Mandelbrot',cx:-0.5,cy:0,zoom:1,iterations:80,juliaC:-0.7,juliaCi:0.27,colorCycles:1,palette:'Cyberpunk' },
   pixelSort: { w:1200,h:1200,seed:0,direction:'Horizontal',threshold:50,sortBy:'Brightness',palette:'Terminal' },
-  truchet:   { w:1200,h:1200,seed:0,type:'Classic',tileSize:40,stroke:2,palette:'Mondrian',bg:'#ffffff',twoColor:true,grain:0 },
-  crystal:   { w:1200,h:1200,seed:0,cols:12,rows:12,jitter:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.15)',stroke:0.5,grain:0 },
-  spirograph:{ w:1200,h:1200,bg:'#050505',R:300,r:113,d:80,loops:15,steps:4000,stroke:1,grain:0,c1:'#00ff41',c2:'#003a0f',c3:'#7affaa' },
-  flowField: { w:1200,h:1200,seed:0,count:500,life:80,steps:150,speed:2,scale:3,octaves:2,curl:1,weight:1,opacity:40,palette:'Terminal',bg:'#050505',grain:0 },
-  space:     { w:1200,h:1200,seed:42,stars:2000,starSize:2,glow:20,nebula:50,nebulaScale:2,palette:'Cyberpunk',bg1:'#0a0a2a',bg2:'#000000',grain:0 },
-  nature:    { w:1200,h:1200,seed:123,layers:4,amplitude:150,frequency:2,skyTop:'#87CEEB',skyBottom:'#E0F6FF',sunSize:60,sunX:0.7,sunY:0.3,sunColor:'#FFD700',sunGlow:50,trees:100,palette:'Forest',grain:0 },
-  clouds:    { w:1200,h:1200,seed:42,scale:3,octaves:5,cover:50,sharpness:0.9,bg1:'#4A90E2',bg2:'#87CEEB',cloudColor:'#ffffff',shadowColor:'#aaccff',grain:0 },
-  paint:     { w:1200,h:1200,seed:42,strokes:1500,length:80,thickness:30,scale:2,curl:1,opacity:80,bristles:20,palette:'Mondrian',bg:'#f0f0f0',grain:0 },
-  matrix:    { w:1200,h:1200,seed:42,fontSize:20,speed:1,length:25,time:0,headColor:'#ffffff',tailColor:'#00ff41',bg:'#000000',glow:10,grain:0 },
+  truchet:   { w:1200,h:1200,seed:0,type:'Classic',tileSize:40,stroke:2,palette:'Mondrian',bg:'#ffffff',twoColor:true },
+  crystal:   { w:1200,h:1200,seed:0,cols:12,rows:12,jitter:60,palette:'Terminal',bg:'#050505',lineColor:'rgba(0,255,65,0.15)',stroke:0.5 },
+  spirograph:{ w:1200,h:1200,bg:'#050505',R:300,r:113,d:80,loops:15,steps:4000,stroke:1,c1:'#00ff41',c2:'#003a0f',c3:'#7affaa' },
+  flowField: { w:1200,h:1200,seed:0,count:500,life:80,steps:150,speed:2,scale:3,octaves:2,curl:1,weight:1,opacity:40,palette:'Terminal',bg:'#050505' },
+  space:     { w:1200,h:1200,seed:42,stars:2000,starSize:2,glow:20,nebula:50,nebulaScale:2,palette:'Cyberpunk',bg1:'#0a0a2a',bg2:'#000000' },
+  nature:    { w:1200,h:1200,seed:123,layers:4,amplitude:150,frequency:2,skyTop:'#87CEEB',skyBottom:'#E0F6FF',sunSize:60,sunX:0.7,sunY:0.3,sunColor:'#FFD700',sunGlow:50,trees:100,palette:'Forest' },
+  clouds:    { w:1200,h:1200,seed:42,scale:3,octaves:5,cover:50,sharpness:0.9,bg1:'#4A90E2',bg2:'#87CEEB',cloudColor:'#ffffff',shadowColor:'#aaccff' },
+  paint:     { w:1200,h:1200,seed:42,strokes:1500,length:80,thickness:30,scale:2,curl:1,opacity:80,bristles:20,palette:'Mondrian',bg:'#f0f0f0' },
+  matrix:    { w:1200,h:1200,seed:42,fontSize:20,speed:1,length:25,time:0,headColor:'#ffffff',tailColor:'#00ff41',bg:'#000000',glow:10 },
 };
 
 // ── State ─────────────────────────────────────────────────────
@@ -45,6 +45,7 @@ let current = 'blocks';
 let params = {};
 window.params = params;
 window.current_tool = () => current;
+window.globalFX = { blur: 0, vignette: 0, smoothness: 0, grain: 0 };
 let renderTimer = null;
 let loadedImage = null;
 
@@ -90,19 +91,20 @@ function CANVAS_SEC(p) {
   <input type="number" id="cw" value="${p.w}" min="200" max="4096" style="width:70px">
   <span>×</span>
   <input type="number" id="ch" value="${p.h}" min="200" max="4096" style="width:70px">
-</div>`) +
-  SEC('Global FX',
-    R('blur', 'Blur', p.blur || 0, 0, 100, 1) +
-    R('vignette', 'Vignette', p.vignette || 0, 0, 100, 1) +
-    R('smoothness', 'Smoothness', p.smoothness || 0, 0, 100, 1)
-  );
+</div>`);
 }
 const PAL_OPTS = GS.PALETTE_NAMES;
 
 function buildPanel(tool) {
   const p = params[tool];
   const panels = {
-    blocks: CANVAS_SEC(p) +
+    blocks: SEC('Color',
+        C2('bg','Background',p.bg) +
+        PAL(p) +
+        R('density','Color Density',p.density,0,100,1) +
+        C2('lineColor','Border Color',p.lineColor)
+        + R('opacity','Opacity',p.opacity,0,100,1)
+      ) +
       SEC('Pattern',
         R('seed','Seed',p.seed,0,9999,1) +
         S('type','Type',['Mondrian','Columns','Rows','Grid'],p.type) +
@@ -113,22 +115,14 @@ function buildPanel(tool) {
         + R('padding','Padding',p.padding,0,50,1)
         + R('splitBias','Split Bias',p.splitBias,0,100,1)
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        PAL(p) +
-        R('density','Color Density',p.density,0,100,1) +
-        C2('lineColor','Border Color',p.lineColor)
-        + R('opacity','Opacity',p.opacity,0,100,1)
-      ) +
       SEC('Stroke',
         R('stroke','Line Weight',p.stroke,0,20,0.5) +
         R('wobble','Edge Wobble',p.wobble,0,100,1)
         + R('rounding','Corner Rounding',p.rounding,0,100,1)
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      CANVAS_SEC(p),
 
-    gradients: CANVAS_SEC(p) +
-      SEC('Color',
+    gradients: SEC('Color',
         PAL(p) +
         S('gradientType','Type',['Linear','Radial','Conic'],p.gradientType) +
         S('blendMode','Blend Mode',['Normal','Multiply','Screen','Overlay','Hard Light'],p.blendMode)
@@ -150,13 +144,23 @@ function buildPanel(tool) {
         R('shadows','Shadows',p.shadows,0,100,1)
       ) +
       SEC('Adjustments',
-        R('grain','Grain',p.grain,0,40,1) +
+
         R('brightness','Brightness',p.brightness,-100,100,1) +
         R('contrast','Contrast',p.contrast,50,200,1) +
         R('saturation','Saturation',p.saturation,0,200,1)
-      ),
+      ) +
+      CANVAS_SEC(p),
 
-    lines: CANVAS_SEC(p) +
+    lines: SEC('Background',
+        T('bgGradient','Gradient BG',p.bgGradient) +
+        C2('bg','BG Color 1',p.bg) +
+        C2('bg2','BG Color 2',p.bg2||p.bg)
+      ) +
+      SEC('Color',
+        T('colorGradient','Gradient Lines',p.colorGradient) +
+        C2('lineColor','Line Color',p.lineColor) +
+        C2('lineColor2','Color 2',p.lineColor2||p.lineColor)
+      ) +
       SEC('Shape',
         S('shape','Shape',['Sine Waves','Horizontal Lines','Vertical Lines','Zigzag','Diagonal','Concentric','Radial','Spiral','Grid'],p.shape) +
         R('frequency','Frequency',p.frequency,0.001,0.3,0.001) +
@@ -169,15 +173,9 @@ function buildPanel(tool) {
         S('lineJoin','Line Join',['miter','round','bevel'],p.lineJoin) +
         R('seed','Seed',p.seed,0,9999,1)
       ) +
-      SEC('Background',
-        T('bgGradient','Gradient BG',p.bgGradient) +
-        C2('bg','BG Color 1',p.bg) +
-        C2('bg2','BG Color 2',p.bg2||p.bg)
-      ) +
-      SEC('Color',
-        T('colorGradient','Gradient Lines',p.colorGradient) +
-        C2('lineColor','Line Color',p.lineColor) +
-        C2('lineColor2','Color 2',p.lineColor2||p.lineColor)
+      SEC('Effects',
+        R('halftone','Halftone',p.halftone,0,30,1) +
+        R('glow','Glow',p.glow,0,50,1)
       ) +
       SEC('Variation',
         R('weightVar','Weight Var',p.weightVar,0,100,1) +
@@ -186,13 +184,13 @@ function buildPanel(tool) {
         R('rotationJitter','Rotation Jitter',p.rotationJitter,0,45,0.5,'°') +
         R('colorDrift','Color Drift',p.colorDrift,0,100,1)
       ) +
-      SEC('Effects',
-        R('halftone','Halftone',p.halftone,0,30,1) +
-        R('glow','Glow',p.glow,0,50,1) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p),
 
-    organic: CANVAS_SEC(p) +
+    organic: SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('colorMode','Mode',['gradient','palette'],p.colorMode) +
+        PAL(p)
+      ) +
       SEC('Paths',
         R('seed','Seed',p.seed,0,99999,1) +
         S('pathType','Type',['Waves','Filled','Curl','Strand'],p.pathType) +
@@ -207,19 +205,17 @@ function buildPanel(tool) {
         R('wobble','Wobble',p.wobble,0,100,1) +
         R('roughness','Roughness',p.roughness,0,100,1)
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        S('colorMode','Mode',['gradient','palette'],p.colorMode) +
-        PAL(p)
-      ) +
       SEC('Shadow',
         R('shadowBlur','Shadow Blur',p.shadowBlur,0,100,1) +
         R('shadowX','Shadow X',p.shadowX,-100,100,1) +
         R('shadowY','Shadow Y',p.shadowY,-100,100,1)
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      CANVAS_SEC(p),
 
-    plotter: CANVAS_SEC(p) +
+    plotter: SEC('Color',
+        C2('bg','Background',p.bg) +
+        PAL(p)
+      ) +
       SEC('Grid',
         R('seed','Seed',p.seed,0,99999,1) +
         S('type','Type',['Dot Grid','Random','Hexagonal'],p.type) +
@@ -244,13 +240,14 @@ function buildPanel(tool) {
         R('noiseScale','Scale',p.noiseScale,0.001,0.1,0.001) +
         R('noiseIntensity','Intensity',p.noiseIntensity,0,3,0.05)
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p),
 
-    topo: CANVAS_SEC(p) +
+    topo: SEC('Color',
+        C2('bg','Background',p.bg) +
+        S('mode','Mode',['Single','Gradient','Rainbow'],p.mode) +
+        C2('lineColor','Line Color',p.lineColor) +
+        R('opacity','Opacity',p.opacity,10,100,1,'%')
+      ) +
       SEC('Terrain',
         R('seed','Seed',p.seed,0,99999,1) +
         R('levels','Contour Levels',p.levels,2,80,1) +
@@ -262,19 +259,13 @@ function buildPanel(tool) {
         R('strokeWeight','Weight',p.strokeWeight,0.1,12,0.1) +
         R('wobble','Wobble',p.wobble,0,50,1)
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        S('mode','Mode',['Single','Gradient','Rainbow'],p.mode) +
-        C2('lineColor','Line Color',p.lineColor) +
-        R('opacity','Opacity',p.opacity,10,100,1,'%')
-      ) +
       SEC('Effects',
-        R('grain','Grain',p.grain,0,80,1) +
-        R('margin','Margin',p.margin,0,100,1)
-      ),
 
-    marble: CANVAS_SEC(p) +
-      SEC('Colors',
+        R('margin','Margin',p.margin,0,100,1)
+      ) +
+      CANVAS_SEC(p),
+
+    marble: SEC('Colors',
         C2('main','Main',p.main) + C2('low','Low',p.low) +
         C2('mid','Mid',p.mid) + C2('high','High',p.high)
       ) +
@@ -289,9 +280,12 @@ function buildPanel(tool) {
         R('fbmStrength','FBM Strength',p.fbmStrength,0,5,0.1) +
         R('fbmDamping','FBM Damping',p.fbmDamping,0,5,0.1)
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,60,1)),
+      CANVAS_SEC(p),
 
-    ascii: CANVAS_SEC(p) +
+    ascii: SEC('Color',
+        C2('bg','Background',p.bg) +
+        C2('color','Text Color',p.color||'#00ff41')
+      ) +
       SEC('Source',
         `<div class="upload-zone" id="ascii-zone"><input type="file" id="ascii-file" accept="image/*"><div>LOAD IMAGE</div><div style="font-size:9px;margin-top:3px;color:var(--text4)">drag & drop or click</div></div>
         <button class="btn btn-ghost btn-sm" id="ascii-clear" style="width:100%;margin-bottom:4px">CLEAR IMAGE</button>`
@@ -305,17 +299,14 @@ function buildPanel(tool) {
         R('lineHeight','Line Height',p.lineHeight,0.5,3,0.1) +
         R('seed','Seed (pattern)',p.seed,0,9999,1)
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        C2('color','Text Color',p.color||'#00ff41')
-      ) +
       SEC('Adjustments',
         R('contrast','Contrast',p.contrast,50,200,1) +
         R('brightness','Brightness',p.brightness,-100,100,1) +
         T('invert','Invert',p.invert)
-      ),
+      ) +
+      CANVAS_SEC(p),
 
-    dither: CANVAS_SEC(p) +
+    dither: SEC('Palette', PAL(p)) +
       SEC('Source',
         `<div class="upload-zone" id="dither-zone"><input type="file" id="dither-file" accept="image/*"><div>LOAD IMAGE</div></div>` +
         S('sourceType','Source Type',['Gradient','Noise'],p.sourceType)
@@ -326,9 +317,12 @@ function buildPanel(tool) {
         R('cellSize','Cell Size',p.cellSize,1,20,1,'px') +
         R('seed','Seed',p.seed,0,9999,1)
       ) +
-      SEC('Palette', PAL(p)),
+      CANVAS_SEC(p),
 
-    noise: CANVAS_SEC(p) +
+    noise: SEC('Color',
+        C2('c1','Dark Color',p.c1) +
+        C2('c2','Light Color',p.c2)
+      ) +
       SEC('Noise',
         R('seed','Seed',p.seed,0,9999,1) +
         R('scale','Scale',p.scale,0.5,20,0.1) +
@@ -340,13 +334,13 @@ function buildPanel(tool) {
         T('terraced','Terraced',p.terraced) +
         R('terraces','Terraces',p.terraces,2,20,1)
       ) +
-      SEC('Color',
-        C2('c1','Dark Color',p.c1) +
-        C2('c2','Light Color',p.c2)
-      ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      CANVAS_SEC(p),
 
-    circles: CANVAS_SEC(p) +
+    circles: SEC('Color',
+        C2('bg','Background',p.bg) +
+        PAL(p) +
+        C2('lineColor','Stroke Color',p.lineColor)
+      ) +
       SEC('Type',
         R('seed','Seed',p.seed,0,9999,1) +
         S('type','Type',['Concentric','Random Bubble','Grid'],p.type) +
@@ -363,14 +357,12 @@ function buildPanel(tool) {
         R('rows','Grid Rows',p.rows,2,30,1) +
         R('cols','Grid Cols',p.cols,2,30,1)
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        PAL(p) +
-        C2('lineColor','Stroke Color',p.lineColor)
-      ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      CANVAS_SEC(p),
 
-    typography: CANVAS_SEC(p) +
+    typography: SEC('Color',
+        C2('bg','Background',p.bg) +
+        PAL(p)
+      ) +
       SEC('Text',
         `<div class="ctrl"><div class="ctrl-row"><span class="ctrl-lbl">Text</span></div><input type="text" id="text" value="${p.text||'GENSTUDIO'}"></div>` +
         S('type','Layout',['Scatter','Stack','Path'],p.type) +
@@ -389,13 +381,13 @@ function buildPanel(tool) {
         R('rotation','Rotation Range',p.rotation,0,360,1,'°') +
         R('glow','Glow',p.glow,0,100,1)
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p),
 
-    waves: CANVAS_SEC(p) +
+    waves: SEC('Color',
+        C2('bg','Background',p.bg) +
+        C2('c1','Wave Start',p.c1||'#0e4d68') +
+        C2('c2','Wave End',p.c2||'#64dfb8')
+      ) +
       SEC('Wave',
         R('seed','Seed',p.seed,0,9999,1) +
         R('layers','Layers',p.layers,1,50,1) +
@@ -407,27 +399,24 @@ function buildPanel(tool) {
         R('noise','Noise',p.noise,0,1,0.01) +
         R('opacity','Opacity',p.opacity,10,100,1,'%')
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        C2('c1','Wave Start',p.c1||'#0e4d68') +
-        C2('c2','Wave End',p.c2||'#64dfb8')
-      ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      CANVAS_SEC(p),
 
-    voronoi: CANVAS_SEC(p) +
+    voronoi: SEC('Color',
+        PAL(p) +
+        T('drawEdges','Draw Edges',p.drawEdges) +
+        C2('edgeColor','Edge Color',p.edgeColor||'#000000')
+      ) +
       SEC('Points',
         R('seed','Seed',p.seed,0,9999,1) +
         R('count','Points',p.count,3,300,1) +
         S('metric','Distance',['Euclidean','Manhattan','Chebyshev'],p.metric)
       ) +
-      SEC('Color',
-        PAL(p) +
-        T('drawEdges','Draw Edges',p.drawEdges) +
-        C2('edgeColor','Edge Color',p.edgeColor||'#000000')
-      ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
+      CANVAS_SEC(p),
 
-    fractal: CANVAS_SEC(p) +
+    fractal: SEC('Color',
+        PAL(p) +
+        R('colorCycles','Color Cycles',p.colorCycles,0,10,0.5)
+      ) +
       SEC('Type',
         S('type','Fractal',['Mandelbrot','Julia','Burning Ship'],p.type) +
         R('iterations','Iterations',p.iterations,20,500,5) +
@@ -439,13 +428,9 @@ function buildPanel(tool) {
         R('juliaC','C Real',p.juliaC,-2,2,0.01) +
         R('juliaCi','C Imag',p.juliaCi,-2,2,0.01)
       ) +
-      SEC('Color',
-        PAL(p) +
-        R('colorCycles','Color Cycles',p.colorCycles,0,10,0.5)
-      ),
+      CANVAS_SEC(p),
 
-    pixelSort: CANVAS_SEC(p) +
-      SEC('Source',
+    pixelSort: SEC('Source',
         `<div class="upload-zone" id="ps-zone"><input type="file" id="ps-file" accept="image/*"><div>LOAD IMAGE</div></div>` +
         PAL(p, 'palette', 'Base Palette')
       ) +
@@ -453,9 +438,13 @@ function buildPanel(tool) {
         S('direction','Direction',['Horizontal','Vertical','Both'],p.direction) +
         R('threshold','Threshold',p.threshold,0,100,1,'%') +
         S('sortBy','Sort By',['Brightness','Hue','Saturation'],p.sortBy)
-      ),
+      ) +
+      CANVAS_SEC(p),
 
-    truchet: CANVAS_SEC(p) +
+    truchet: SEC('Color',
+        C2('bg','Background',p.bg) +
+        PAL(p)
+      ) +
       SEC('Tile',
         R('seed','Seed',p.seed,0,9999,1) +
         S('type','Type',['Classic','Diagonal','SquareCurve','Triangle'],p.type) +
@@ -463,28 +452,28 @@ function buildPanel(tool) {
         R('stroke','Stroke',p.stroke,0.5,12,0.5) +
         T('twoColor','Two Color',p.twoColor)
       ) +
-      SEC('Color',
+      CANVAS_SEC(p),
+
+    crystal: SEC('Color',
         C2('bg','Background',p.bg) +
         PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
-
-    crystal: CANVAS_SEC(p) +
+        C2('lineColor','Edge Color',p.lineColor||'rgba(0,0,0,0.2)') +
+        R('stroke','Edge Weight',p.stroke,0,6,0.25)
+      ) +
       SEC('Grid',
         R('seed','Seed',p.seed,0,9999,1) +
         R('cols','Columns',p.cols,3,50,1) +
         R('rows','Rows',p.rows,3,50,1) +
         R('jitter','Jitter',p.jitter,0,100,1,'%')
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        PAL(p) +
-        C2('lineColor','Edge Color',p.lineColor||'rgba(0,0,0,0.2)') +
-        R('stroke','Edge Weight',p.stroke,0,6,0.25) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p),
 
-    spirograph: CANVAS_SEC(p) +
+    spirograph: SEC('Color',
+        C2('bg','Background',p.bg) +
+        C2('c1','Color Start',p.c1||'#00ff41') +
+        C2('c2','Color Mid',p.c2||'#003a0f') +
+        C2('c3','Color End',p.c3||'#7affaa')
+      ) +
       SEC('Parameters',
         R('R','Outer Radius',p.R,50,600,5) +
         R('r','Inner Radius',p.r,5,595,5) +
@@ -493,16 +482,12 @@ function buildPanel(tool) {
         R('steps','Resolution',p.steps,200,10000,100) +
         R('stroke','Stroke',p.stroke,0.1,10,0.1)
       ) +
-      SEC('Color',
+      CANVAS_SEC(p),
+
+    flowField: SEC('Color',
         C2('bg','Background',p.bg) +
-        C2('c1','Color Start',p.c1||'#00ff41') +
-        C2('c2','Color Mid',p.c2||'#003a0f') +
-        C2('c3','Color End',p.c3||'#7affaa')
+        PAL(p)
       ) +
-      SEC('Effects', R('grain','Grain',p.grain,0,80,1)),
-
-
-    flowField: CANVAS_SEC(p) +
       SEC('Particles',
         R('seed','Seed',p.seed,0,9999,1) +
         R('count','Count',p.count,50,3000,50) +
@@ -517,13 +502,12 @@ function buildPanel(tool) {
         R('octaves','Octaves',p.octaves,1,6,1) +
         R('curl','Curl',p.curl,0.1,6,0.1)
       ) +
-      SEC('Color',
-        C2('bg','Background',p.bg) +
-        PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p),
 
-    space: CANVAS_SEC(p) +
+    space: SEC('Background',
+        C2('bg1','Core Background',p.bg1) +
+        C2('bg2','Edge Background',p.bg2)
+      ) +
       SEC('Cosmos',
         R('seed','Seed',p.seed,0,9999,1) +
         R('stars','Stars',p.stars,100,10000,100) +
@@ -535,13 +519,11 @@ function buildPanel(tool) {
         R('nebulaScale','Nebula Scale',p.nebulaScale,0.5,10,0.5) +
         PAL(p)
       ) +
-      SEC('Background',
-        C2('bg1','Core Background',p.bg1) +
-        C2('bg2','Edge Background',p.bg2) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p),
 
-    nature: CANVAS_SEC(p) +
+    nature: SEC('Colors',
+        PAL(p)
+      ) +
       SEC('Landscape',
         R('seed','Seed',p.seed,0,9999,1) +
         R('layers','Mountain Layers',p.layers,1,10,1) +
@@ -558,12 +540,14 @@ function buildPanel(tool) {
         C2('sunColor','Sun Color',p.sunColor) +
         R('sunGlow','Sun Glow',p.sunGlow,0,100,1)
       ) +
-      SEC('Colors',
-        PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p),
 
-    clouds: CANVAS_SEC(p) +
+    clouds: SEC('Colors',
+        C2('bg1','Sky Top',p.bg1) +
+        C2('bg2','Sky Bottom',p.bg2) +
+        C2('cloudColor','Cloud Highlights',p.cloudColor) +
+        C2('shadowColor','Cloud Shadows',p.shadowColor)
+      ) +
       SEC('Noise',
         R('seed','Seed',p.seed,0,9999,1) +
         R('scale','Scale',p.scale,0.5,15,0.5) +
@@ -571,15 +555,12 @@ function buildPanel(tool) {
         R('cover','Cloud Cover',p.cover,0,100,1,'%') +
         R('sharpness','Sharpness',p.sharpness,0.1,3,0.1)
       ) +
-      SEC('Colors',
-        C2('bg1','Sky Top',p.bg1) +
-        C2('bg2','Sky Bottom',p.bg2) +
-        C2('cloudColor','Cloud Highlights',p.cloudColor) +
-        C2('shadowColor','Cloud Shadows',p.shadowColor) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p),
 
-    paint: CANVAS_SEC(p) +
+    paint: SEC('Colors',
+        C2('bg','Background Canvas',p.bg) +
+        PAL(p)
+      ) +
       SEC('Brush',
         R('seed','Seed',p.seed,0,9999,1) +
         R('strokes','Strokes',p.strokes,100,10000,100) +
@@ -592,13 +573,14 @@ function buildPanel(tool) {
         R('scale','Flow Scale',p.scale,0.5,10,0.5) +
         R('curl','Curl',p.curl,0.1,5,0.1)
       ) +
-      SEC('Colors',
-        C2('bg','Background Canvas',p.bg) +
-        PAL(p) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p),
 
-    matrix: CANVAS_SEC(p) +
+    matrix: SEC('Colors',
+        C2('bg','Background',p.bg) +
+        C2('headColor','Head Color',p.headColor) +
+        C2('tailColor','Tail Color',p.tailColor) +
+        R('glow','Glow',p.glow,0,50,1)
+      ) +
       SEC('Code',
         R('seed','Seed',p.seed,0,9999,1) +
         R('fontSize','Font Size',p.fontSize,6,48,1) +
@@ -606,13 +588,7 @@ function buildPanel(tool) {
         R('speed','Speed Var',p.speed,0.1,3,0.1) +
         R('time','Time Offset',p.time,0,1000,1)
       ) +
-      SEC('Colors',
-        C2('bg','Background',p.bg) +
-        C2('headColor','Head Color',p.headColor) +
-        C2('tailColor','Tail Color',p.tailColor) +
-        R('glow','Glow',p.glow,0,50,1) +
-        R('grain','Grain',p.grain,0,80,1)
-      ),
+      CANVAS_SEC(p)
   };
   return panels[tool] || SEC('Controls', '<p style="color:var(--text4);font-size:10px;padding:4px">No controls for this tool.</p>');
 }
@@ -821,6 +797,21 @@ function randomize() {
 function init() {
   canvas = document.getElementById('main-canvas');
   ctx = canvas.getContext('2d');
+
+  // Bind global FX
+  const fxIds = ['blur', 'vignette', 'smoothness', 'grain'];
+  fxIds.forEach(id => {
+    const el = document.getElementById('global-' + id);
+    if (el) {
+      el.addEventListener('input', () => {
+        const val = parseFloat(el.value);
+        window.globalFX[id] = val;
+        const vEl = document.getElementById('v_global-' + id);
+        if (vEl) vEl.textContent = val;
+        schedRender();
+      });
+    }
+  });
 
   // Build nav
   const nav = document.getElementById('tool-nav');

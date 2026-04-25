@@ -188,6 +188,33 @@ body {
 }
 
 
+/* Global FX Bar */
+.global-fx-bar {
+  height: 40px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+}
+
+.fx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-family: var(--font-main);
+  width: 150px;
+}
+
+.fx-item input[type=range] {
+  margin: 0;
+  flex: 1;
+}
+
 /* Bottom Bar */
 .bottom-bar {
   height: 50px;

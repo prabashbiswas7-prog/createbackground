@@ -176,8 +176,10 @@ function applyGrain(ctx, w, h, amount) {
 }
 
 function applyPostFX(cx, w, h, p) {
-    if (p.blur > 0) {
-      const blurAmount = (p.blur / 100) * 10;
+    const globalFX = window.globalFX || { blur: 0, vignette: 0, smoothness: 0, grain: 0 };
+
+    if (globalFX.blur > 0) {
+      const blurAmount = (globalFX.blur / 100) * 10;
       cx.save();
       cx.filter = 'blur(' + blurAmount + 'px)';
       cx.globalAlpha = 0.5;
@@ -185,8 +187,8 @@ function applyPostFX(cx, w, h, p) {
       cx.restore();
     }
 
-    if (p.vignette > 0) {
-      const vAmount = p.vignette / 100;
+    if (globalFX.vignette > 0) {
+      const vAmount = globalFX.vignette / 100;
       cx.save();
       const grad = cx.createRadialGradient(w/2, h/2, Math.min(w,h)*0.3, w/2, h/2, Math.min(w,h)*0.8);
       grad.addColorStop(0, 'rgba(0,0,0,0)');
@@ -196,8 +198,8 @@ function applyPostFX(cx, w, h, p) {
       cx.restore();
     }
 
-    if (p.smoothness > 0) {
-        const smoothAmount = (p.smoothness / 100);
+    if (globalFX.smoothness > 0) {
+        const smoothAmount = (globalFX.smoothness / 100);
         cx.save();
         cx.globalAlpha = smoothAmount * 0.3;
         cx.globalCompositeOperation = 'soft-light';
@@ -205,8 +207,8 @@ function applyPostFX(cx, w, h, p) {
         cx.restore();
     }
 
-    if (p.grain > 0) {
-      applyGrain(cx, w, h, p.grain);
+    if (globalFX.grain > 0) {
+      applyGrain(cx, w, h, globalFX.grain);
     }
 }
 

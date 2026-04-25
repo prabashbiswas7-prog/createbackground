@@ -462,14 +462,7 @@ input[type=text]:focus, input[type=number]:focus { border-color: var(--text-mute
 .custom-size span { color: var(--text-muted); }
 
 /* Range sliders */
-input[type=range] {
-  -webkit-appearance: none; width: 100%; height: 2px; background: var(--border-color);
-  outline: none; margin: 10px 0; display: block;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 12px; height: 12px; background: var(--accent-green);
-  border-radius: 2px; cursor: pointer; transition: transform 0.1s;
-}
+
 
 /* Selects and Inputs */
 select, input[type=text], input[type=number] {
@@ -491,16 +484,6 @@ select:focus, input[type=text]:focus, input[type=number]:focus { border-color: v
   position: absolute; opacity: 0; inset: -5px; width: 50px; height: 40px; cursor: pointer;
 }
 
-/* Toggle */
-.tog {
-  width: 32px; height: 16px; background: #222; border-radius: 2px; position: relative; cursor: pointer; transition: 0.2s;
-}
-.tog::after {
-  content: ''; position: absolute; left: 0; top: 0; width: 16px; height: 16px;
-  background: var(--text-muted); border-radius: 2px; transition: 0.2s;
-}
-.tog.on { background: var(--accent-green); border-color: var(--accent-green); }
-.tog.on::after { left: 16px; background: #fff; box-shadow: var(--green-glow); }
 .val, .ctrl-v { text-align: right; }
 
 /* Fix Dropdown Option Colors */

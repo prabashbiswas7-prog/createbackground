@@ -37,6 +37,18 @@
 
   <!-- Center Area -->
   <main class="center-area">
+    <!-- Canvas Bar (Top) -->
+    <div class="canvas-bar" id="canvas-bar">
+      <div class="size-grid" id="global-size-grid">
+        <!-- Pills injected by JS or hardcoded -->
+      </div>
+      <div class="custom-size">
+        <input type="number" id="global-cw" value="1200" min="200" max="4096">
+        <span>×</span>
+        <input type="number" id="global-ch" value="1200" min="200" max="4096">
+      </div>
+    </div>
+
     <div class="canvas-container" id="canvas-wrap">
       <canvas id="main-canvas" width="1200" height="1200"></canvas>
     </div>

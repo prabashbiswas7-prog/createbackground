@@ -156,6 +156,75 @@ body {
   margin-right: 12px;
 }
 
+
+/* Canvas Bar (Top) */
+.canvas-bar {
+  height: 40px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  z-index: 10;
+}
+
+.canvas-bar .size-grid {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.canvas-bar .size-pill {
+  padding: 4px 8px;
+  min-width: 40px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius);
+  font-family: var(--font-main);
+  transition: 0.2s;
+}
+
+.canvas-bar .size-pill.active {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #000;
+  font-weight: bold;
+}
+
+.canvas-bar .size-pill:hover:not(.active) {
+  border-color: var(--text-main);
+  color: var(--text-main);
+}
+
+.canvas-bar .custom-size {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.canvas-bar .custom-size input {
+  width: 60px;
+  text-align: center;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 10px;
+  padding: 4px 6px;
+  outline: none;
+  border-radius: var(--radius);
+}
+
+.canvas-bar .custom-size input:focus {
+  border-color: var(--text-muted);
+}
+
 /* Center Area */
 .center-area {
   flex: 1;

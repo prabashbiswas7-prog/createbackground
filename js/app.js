@@ -79,20 +79,6 @@ function T(id, name, val) {
 function SEC(title, body, open=true) {
   return `<div class="sec${open?'':' closed'}"><div class="sec-hdr"><span class="sec-title">${title}</span><span class="sec-arrow">▾</span></div><div class="sec-body">${body}</div></div>`;
 }
-function CANVAS_SEC(p) {
-  const snames = Object.keys(GS.SIZES);
-  const pills = snames.map(n => {
-    const [w,h]=GS.SIZES[n];
-    const active = p.w===w&&p.h===h;
-    return `<button class="size-pill${active?' active':''}" data-size="${n}">${n}</button>`;
-  }).join('');
-  return SEC('Canvas', `<div class="size-grid">${pills}</div>
-<div class="custom-size">
-  <input type="number" id="cw" value="${p.w}" min="200" max="4096" style="width:70px">
-  <span>×</span>
-  <input type="number" id="ch" value="${p.h}" min="200" max="4096" style="width:70px">
-</div>`);
-}
 const PAL_OPTS = GS.PALETTE_NAMES;
 
 function buildPanel(tool) {
@@ -119,8 +105,7 @@ function buildPanel(tool) {
         R('stroke','Line Weight',p.stroke,0,20,0.5) +
         R('wobble','Edge Wobble',p.wobble,0,100,1)
         + R('rounding','Corner Rounding',p.rounding,0,100,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     gradients: SEC('Color',
         PAL(p) +
@@ -148,8 +133,7 @@ function buildPanel(tool) {
         R('brightness','Brightness',p.brightness,-100,100,1) +
         R('contrast','Contrast',p.contrast,50,200,1) +
         R('saturation','Saturation',p.saturation,0,200,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     lines: SEC('Background',
         T('bgGradient','Gradient BG',p.bgGradient) +
@@ -183,8 +167,7 @@ function buildPanel(tool) {
         R('opacityVar','Opacity Var',p.opacityVar,0,100,1) +
         R('rotationJitter','Rotation Jitter',p.rotationJitter,0,45,0.5,'°') +
         R('colorDrift','Color Drift',p.colorDrift,0,100,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     organic: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -209,8 +192,7 @@ function buildPanel(tool) {
         R('shadowBlur','Shadow Blur',p.shadowBlur,0,100,1) +
         R('shadowX','Shadow X',p.shadowX,-100,100,1) +
         R('shadowY','Shadow Y',p.shadowY,-100,100,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     plotter: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -239,8 +221,7 @@ function buildPanel(tool) {
       SEC('Noise',
         R('noiseScale','Scale',p.noiseScale,0.001,0.1,0.001) +
         R('noiseIntensity','Intensity',p.noiseIntensity,0,3,0.05)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     topo: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -262,8 +243,7 @@ function buildPanel(tool) {
       SEC('Effects',
 
         R('margin','Margin',p.margin,0,100,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     marble: SEC('Colors',
         C2('main','Main',p.main) + C2('low','Low',p.low) +
@@ -279,8 +259,7 @@ function buildPanel(tool) {
       SEC('FBM',
         R('fbmStrength','FBM Strength',p.fbmStrength,0,5,0.1) +
         R('fbmDamping','FBM Damping',p.fbmDamping,0,5,0.1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     ascii: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -303,8 +282,7 @@ function buildPanel(tool) {
         R('contrast','Contrast',p.contrast,50,200,1) +
         R('brightness','Brightness',p.brightness,-100,100,1) +
         T('invert','Invert',p.invert)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     dither: SEC('Palette', PAL(p)) +
       SEC('Source',
@@ -316,8 +294,7 @@ function buildPanel(tool) {
         S('shape','Cell Shape',['Square','Circle','Diamond'],p.shape) +
         R('cellSize','Cell Size',p.cellSize,1,20,1,'px') +
         R('seed','Seed',p.seed,0,9999,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     noise: SEC('Color',
         C2('c1','Dark Color',p.c1) +
@@ -333,8 +310,7 @@ function buildPanel(tool) {
         T('ridged','Ridged',p.ridged) +
         T('terraced','Terraced',p.terraced) +
         R('terraces','Terraces',p.terraces,2,20,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     circles: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -356,8 +332,7 @@ function buildPanel(tool) {
         T('pack','Pack (no overlap)',p.pack) +
         R('rows','Grid Rows',p.rows,2,30,1) +
         R('cols','Grid Cols',p.cols,2,30,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     typography: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -380,8 +355,7 @@ function buildPanel(tool) {
         R('count','Count',p.count,10,2000,10) +
         R('rotation','Rotation Range',p.rotation,0,360,1,'°') +
         R('glow','Glow',p.glow,0,100,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     waves: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -398,8 +372,7 @@ function buildPanel(tool) {
         R('offset','Y Offset',p.offset,-50,100,1,'%') +
         R('noise','Noise',p.noise,0,1,0.01) +
         R('opacity','Opacity',p.opacity,10,100,1,'%')
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     voronoi: SEC('Color',
         PAL(p) +
@@ -410,8 +383,7 @@ function buildPanel(tool) {
         R('seed','Seed',p.seed,0,9999,1) +
         R('count','Points',p.count,3,300,1) +
         S('metric','Distance',['Euclidean','Manhattan','Chebyshev'],p.metric)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     fractal: SEC('Color',
         PAL(p) +
@@ -427,8 +399,7 @@ function buildPanel(tool) {
       SEC('Julia',
         R('juliaC','C Real',p.juliaC,-2,2,0.01) +
         R('juliaCi','C Imag',p.juliaCi,-2,2,0.01)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     pixelSort: SEC('Source',
         `<div class="upload-zone" id="ps-zone"><input type="file" id="ps-file" accept="image/*"><div>LOAD IMAGE</div></div>` +
@@ -438,8 +409,7 @@ function buildPanel(tool) {
         S('direction','Direction',['Horizontal','Vertical','Both'],p.direction) +
         R('threshold','Threshold',p.threshold,0,100,1,'%') +
         S('sortBy','Sort By',['Brightness','Hue','Saturation'],p.sortBy)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     truchet: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -451,8 +421,7 @@ function buildPanel(tool) {
         R('tileSize','Size',p.tileSize,8,120,4) +
         R('stroke','Stroke',p.stroke,0.5,12,0.5) +
         T('twoColor','Two Color',p.twoColor)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     crystal: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -465,8 +434,7 @@ function buildPanel(tool) {
         R('cols','Columns',p.cols,3,50,1) +
         R('rows','Rows',p.rows,3,50,1) +
         R('jitter','Jitter',p.jitter,0,100,1,'%')
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     spirograph: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -481,8 +449,7 @@ function buildPanel(tool) {
         R('loops','Loops',p.loops,1,60,1) +
         R('steps','Resolution',p.steps,200,10000,100) +
         R('stroke','Stroke',p.stroke,0.1,10,0.1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     flowField: SEC('Color',
         C2('bg','Background',p.bg) +
@@ -501,8 +468,7 @@ function buildPanel(tool) {
         R('scale','Field Scale',p.scale,0.5,20,0.5) +
         R('octaves','Octaves',p.octaves,1,6,1) +
         R('curl','Curl',p.curl,0.1,6,0.1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     space: SEC('Background',
         C2('bg1','Core Background',p.bg1) +
@@ -518,8 +484,7 @@ function buildPanel(tool) {
         R('nebula','Nebula Intensity',p.nebula,0,100,1) +
         R('nebulaScale','Nebula Scale',p.nebulaScale,0.5,10,0.5) +
         PAL(p)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     nature: SEC('Colors',
         PAL(p)
@@ -539,8 +504,7 @@ function buildPanel(tool) {
         R('sunY','Sun Y',p.sunY,0,1,0.01) +
         C2('sunColor','Sun Color',p.sunColor) +
         R('sunGlow','Sun Glow',p.sunGlow,0,100,1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     clouds: SEC('Colors',
         C2('bg1','Sky Top',p.bg1) +
@@ -554,8 +518,7 @@ function buildPanel(tool) {
         R('octaves','Detail (Octaves)',p.octaves,1,8,1) +
         R('cover','Cloud Cover',p.cover,0,100,1,'%') +
         R('sharpness','Sharpness',p.sharpness,0.1,3,0.1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     paint: SEC('Colors',
         C2('bg','Background Canvas',p.bg) +
@@ -572,8 +535,7 @@ function buildPanel(tool) {
       SEC('Flow',
         R('scale','Flow Scale',p.scale,0.5,10,0.5) +
         R('curl','Curl',p.curl,0.1,5,0.1)
-      ) +
-      CANVAS_SEC(p),
+      ) ,
 
     matrix: SEC('Colors',
         C2('bg','Background',p.bg) +
@@ -587,8 +549,7 @@ function buildPanel(tool) {
         R('length','Trail Length',p.length,5,100,1) +
         R('speed','Speed Var',p.speed,0.1,3,0.1) +
         R('time','Time Offset',p.time,0,1000,1)
-      ) +
-      CANVAS_SEC(p)
+      )
   };
   return panels[tool] || SEC('Controls', '<p style="color:var(--text4);font-size:10px;padding:4px">No controls for this tool.</p>');
 }
@@ -602,6 +563,22 @@ function switchTool(id) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const ni = document.querySelector(`.nav-item[data-tool="${id}"]`);
   if (ni) ni.classList.add('active');
+  // Update global canvas bar inputs
+  const gcw = document.getElementById('global-cw');
+  const gch = document.getElementById('global-ch');
+  if (gcw) gcw.value = params[id].w;
+  if (gch) gch.value = params[id].h;
+
+  // Update pills
+  const pills = document.querySelectorAll('.canvas-bar .size-pill');
+  pills.forEach(p => {
+    if (GS.SIZES[p.dataset.size][0] === params[id].w && GS.SIZES[p.dataset.size][1] === params[id].h) {
+      p.classList.add('active');
+    } else {
+      p.classList.remove('active');
+    }
+  });
+
   // header title
   const tt = document.getElementById('tool-name');
   if (tt) tt.innerHTML = `<span>${TOOLS[id].name}</span>`;
@@ -680,24 +657,6 @@ function bindSection(tool) {
   // Text inputs
   sc.querySelectorAll('input[type=text]').forEach(el => {
     el.addEventListener('input', () => { p[el.id] = el.value; schedRender(); });
-  });
-
-  // Number inputs (custom w/h)
-  const cw = document.getElementById('cw'), ch = document.getElementById('ch');
-  if (cw) cw.addEventListener('change', () => { p.w = Math.max(100, Math.min(4096, parseInt(cw.value)||800)); schedRender(); });
-  if (ch) ch.addEventListener('change', () => { p.h = Math.max(100, Math.min(4096, parseInt(ch.value)||800)); schedRender(); });
-
-  // Size pills
-  sc.querySelectorAll('.size-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      const [w, h] = GS.SIZES[pill.dataset.size] || [800, 800];
-      p.w = w; p.h = h;
-      sc.querySelectorAll('.size-pill').forEach(pp => pp.classList.remove('active'));
-      pill.classList.add('active');
-      if (cw) cw.value = w;
-      if (ch) ch.value = h;
-      schedRender();
-    });
   });
 
   // Image uploads
@@ -797,6 +756,46 @@ function randomize() {
 function init() {
   canvas = document.getElementById('main-canvas');
   ctx = canvas.getContext('2d');
+
+  // Build Canvas Bar
+  const sizeGrid = document.getElementById('global-size-grid');
+  if (sizeGrid) {
+    const snames = Object.keys(GS.SIZES);
+    sizeGrid.innerHTML = snames.map(n => `<button class="size-pill" data-size="${n}">${n}</button>`).join('');
+
+    // Bind pills
+    sizeGrid.querySelectorAll('.size-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const [w, h] = GS.SIZES[pill.dataset.size] || [800, 800];
+        params[current].w = w;
+        params[current].h = h;
+        document.getElementById('global-cw').value = w;
+        document.getElementById('global-ch').value = h;
+
+        sizeGrid.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        schedRender();
+      });
+    });
+  }
+
+  // Bind custom size inputs
+  const gcw = document.getElementById('global-cw');
+  const gch = document.getElementById('global-ch');
+  if (gcw) {
+    gcw.addEventListener('change', () => {
+      params[current].w = Math.max(100, Math.min(4096, parseInt(gcw.value)||800));
+      sizeGrid.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
+      schedRender();
+    });
+  }
+  if (gch) {
+    gch.addEventListener('change', () => {
+      params[current].h = Math.max(100, Math.min(4096, parseInt(gch.value)||800));
+      sizeGrid.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
+      schedRender();
+    });
+  }
 
   // Bind global FX
   const fxIds = ['blur', 'vignette', 'smoothness', 'grain'];

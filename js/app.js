@@ -791,6 +791,7 @@ function doRender() {
         p.stops[2][1] = p.c2 || p.stops[2][1];
     }
 
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     tool.render(canvas, ctx, p, loadedImage);
   } catch(e) {
     console.error('[GenStudio] Render error in', current, ':', e);

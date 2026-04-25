@@ -139,7 +139,10 @@ const PALETTE_NAMES = Object.keys(PALETTES);
 function getPalette(n, p_obj) {
   if (n === 'Custom') {
       // p_obj is not always passed, but we can grab from window.params[window.current]
-      const p = p_obj || (window.params && window.current_tool && window.params[window.current_tool()]) || {};
+      const p = p_obj || (window.params && window.current && window.params[window.current]) || {};
+      if (p.customColors && p.customColors.length > 0) {
+        return [...p.customColors];
+      }
       return [p.custom1||'#ff0000', p.custom2||'#00ff00', p.custom3||'#0000ff', p.custom4||'#ffff00', p.custom5||'#00ffff'];
   }
   return PALETTES[n] || PALETTES['Terminal'];

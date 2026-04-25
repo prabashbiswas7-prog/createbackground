@@ -642,9 +642,14 @@ function bindSection(tool) {
   // Selects
   sc.querySelectorAll('select').forEach(el => {
     el.addEventListener('change', () => {
+      const previousValue = p[el.id];
       p[el.id] = el.value;
       // Re-render the side panel if it's a palette dropdown so swatches update immediately
       if (el.id === 'palette' || el.id.includes('palette')) {
+        // If switching specifically to "Custom", grab colors from the palette we were just on
+        if (el.value === "Custom" && previousValue && previousValue !== "Custom") {
+          p.customColors = [...GS.getPalette(previousValue)];
+        }
         switchTool(current);
       }
       schedRender();

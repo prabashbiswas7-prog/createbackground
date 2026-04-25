@@ -68,7 +68,31 @@ function S(id, name, opts, val) {
   return `<div class="ctrl"><div class="ctrl-row"><span class="ctrl-lbl">${name}</span></div><select id="${id}">${opts2}</select></div>`;
 }
 function PAL(p, id="palette", name="Palette") {
-  return S(id, name, PAL_OPTS, p[id]) + (p[id] === "Custom" ? C2("custom1","C1",p.custom1||"#ff0000") + C2("custom2","C2",p.custom2||"#00ff00") + C2("custom3","C3",p.custom3||"#0000ff") + C2("custom4","C4",p.custom4||"#ffff00") + C2("custom5","C5",p.custom5||"#00ffff") : "");
+  // Get active colors to show
+  let colors = GS.getPalette(p[id]);
+  if (p[id] === "Custom") {
+    colors = [
+      p.custom1 || colors[0] || "#ff0000",
+      p.custom2 || colors[1] || "#00ff00",
+      p.custom3 || colors[2] || "#0000ff",
+      p.custom4 || colors[3] || "#ffff00",
+      p.custom5 || colors[4] || "#00ffff"
+    ];
+  }
+
+  let swatches = "";
+  for (let i = 0; i < 5; i++) {
+    const swatchId = `${id}_custom${i+1}`;
+    // Generate swatches with data attributes so we can easily bind them in bindSection
+    swatches += `<div class="color-row palette-swatch" data-palette-id="${id}" data-custom-key="custom${i+1}">
+      <span class="color-lbl">Color ${i+1}</span>
+      <div class="color-swatch" style="background:${colors[i]||'#000'}">
+        <input type="color" id="${swatchId}" value="${colors[i]||'#000000'}">
+      </div>
+    </div>`;
+  }
+
+  return S(id, name, PAL_OPTS, p[id]) + swatches;
 }
 function C2(id, name, val) {
   return `<div class="color-row"><span class="color-lbl">${name}</span><div class="color-swatch" style="background:${val||'#000'}"><input type="color" id="${id}" value="${val||'#000000'}"></div></div>`;
@@ -615,14 +639,45 @@ function bindSection(tool) {
 
   // Selects
   sc.querySelectorAll('select').forEach(el => {
-    el.addEventListener('change', () => { p[el.id] = el.value; schedRender(); });
+    el.addEventListener('change', () => {
+      p[el.id] = el.value;
+      // Re-render the side panel if it's a palette dropdown so swatches update immediately
+      if (el.id === 'palette' || el.id.includes('palette')) {
+        switchTool(current);
+      }
+      schedRender();
+    });
   });
 
   // Colors
   sc.querySelectorAll('input[type=color]').forEach(el => {
     el.addEventListener('input', () => {
-      p[el.id] = el.value;
+      // Check if this is a palette swatch
+      const swatchRow = el.closest('.palette-swatch');
+      if (swatchRow) {
+        const palId = swatchRow.dataset.paletteId;
+        const customKey = swatchRow.dataset.customKey; // custom1, custom2...
+
+        // Ensure the current colors are captured before switching to Custom
+        if (p[palId] !== "Custom") {
+          const currentColors = GS.getPalette(p[palId]);
+          p.custom1 = p.custom1 || currentColors[0];
+          p.custom2 = p.custom2 || currentColors[1];
+          p.custom3 = p.custom3 || currentColors[2];
+          p.custom4 = p.custom4 || currentColors[3];
+          p.custom5 = p.custom5 || currentColors[4];
+
+          p[palId] = "Custom";
+          const sel = document.getElementById(palId);
+          if (sel) sel.value = "Custom";
+        }
+        p[customKey] = el.value;
+      } else {
+        p[el.id] = el.value;
+      }
+
       el.closest('.color-swatch').style.background = el.value;
+
       // Update stops for gradients tool
       if (tool === 'gradients' && el.id.startsWith('gc')) {
         const idx = parseInt(el.id.slice(2));

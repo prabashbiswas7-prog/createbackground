@@ -68,28 +68,30 @@ function S(id, name, opts, val) {
   return `<div class="ctrl"><div class="ctrl-row"><span class="ctrl-lbl">${name}</span></div><select id="${id}">${opts2}</select></div>`;
 }
 function PAL(p, id="palette", name="Palette") {
-  // Get active colors to show
-  let colors = GS.getPalette(p[id]);
-  if (p[id] === "Custom") {
-    colors = [
-      p.custom1 || colors[0] || "#ff0000",
-      p.custom2 || colors[1] || "#00ff00",
-      p.custom3 || colors[2] || "#0000ff",
-      p.custom4 || colors[3] || "#ffff00",
-      p.custom5 || colors[4] || "#00ffff"
-    ];
+  // If customColors array doesn't exist, initialize it with the current palette's colors.
+  if (!p.customColors) {
+    p.customColors = [...GS.getPalette(p[id])];
   }
 
+  // Get active colors to show
+  let colors = p[id] === "Custom" ? p.customColors : GS.getPalette(p[id]);
+
   let swatches = "";
-  for (let i = 0; i < 5; i++) {
-    const swatchId = `${id}_custom${i+1}`;
-    // Generate swatches with data attributes so we can easily bind them in bindSection
-    swatches += `<div class="color-row palette-swatch" data-palette-id="${id}" data-custom-key="custom${i+1}">
+  for (let i = 0; i < colors.length; i++) {
+    const swatchId = `${id}_custom${i}`;
+    swatches += `<div class="color-row palette-swatch" data-palette-id="${id}" data-custom-idx="${i}">
       <span class="color-lbl">Color ${i+1}</span>
-      <div class="color-swatch" style="background:${colors[i]||'#000'}">
-        <input type="color" id="${swatchId}" value="${colors[i]||'#000000'}">
+      <div style="display:flex; align-items:center; gap: 8px;">
+        <div class="color-swatch" style="background:${colors[i]||'#000'}">
+          <input type="color" id="${swatchId}" value="${colors[i]||'#000000'}">
+        </div>
+        ${colors.length > 1 ? `<button class="del-color-btn" title="Remove Color">×</button>` : ''}
       </div>
     </div>`;
+  }
+
+  if (colors.length < 10) {
+    swatches += `<button class="add-color-btn" data-palette-id="${id}">+ Add Color</button>`;
   }
 
   return S(id, name, PAL_OPTS, p[id]) + swatches;
@@ -649,6 +651,41 @@ function bindSection(tool) {
     });
   });
 
+  // Palette Buttons (Add / Remove)
+  sc.querySelectorAll('.del-color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const swatchRow = btn.closest('.palette-swatch');
+      if (!swatchRow) return;
+      const palId = swatchRow.dataset.paletteId;
+      const customIdx = parseInt(swatchRow.dataset.customIdx);
+
+      if (p[palId] !== "Custom") {
+        p.customColors = [...GS.getPalette(p[palId])];
+        p[palId] = "Custom";
+      }
+      p.customColors.splice(customIdx, 1);
+      switchTool(current); // re-render sidebar
+      schedRender();
+    });
+  });
+
+  sc.querySelectorAll('.add-color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const palId = btn.dataset.paletteId;
+
+      if (p[palId] !== "Custom") {
+        p.customColors = [...GS.getPalette(p[palId])];
+        p[palId] = "Custom";
+      }
+      if (p.customColors.length < 10) {
+        // Duplicate the last color
+        p.customColors.push(p.customColors[p.customColors.length - 1] || '#000000');
+        switchTool(current); // re-render sidebar
+        schedRender();
+      }
+    });
+  });
+
   // Colors
   sc.querySelectorAll('input[type=color]').forEach(el => {
     el.addEventListener('input', () => {
@@ -656,22 +693,16 @@ function bindSection(tool) {
       const swatchRow = el.closest('.palette-swatch');
       if (swatchRow) {
         const palId = swatchRow.dataset.paletteId;
-        const customKey = swatchRow.dataset.customKey; // custom1, custom2...
+        const customIdx = parseInt(swatchRow.dataset.customIdx);
 
         // Ensure the current colors are captured before switching to Custom
         if (p[palId] !== "Custom") {
-          const currentColors = GS.getPalette(p[palId]);
-          p.custom1 = p.custom1 || currentColors[0];
-          p.custom2 = p.custom2 || currentColors[1];
-          p.custom3 = p.custom3 || currentColors[2];
-          p.custom4 = p.custom4 || currentColors[3];
-          p.custom5 = p.custom5 || currentColors[4];
-
+          p.customColors = [...GS.getPalette(p[palId])];
           p[palId] = "Custom";
           const sel = document.getElementById(palId);
           if (sel) sel.value = "Custom";
         }
-        p[customKey] = el.value;
+        p.customColors[customIdx] = el.value;
       } else {
         p[el.id] = el.value;
       }

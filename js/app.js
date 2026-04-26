@@ -835,9 +835,55 @@ function doRender() {
 // ── Randomize ─────────────────────────────────────────────────
 function randomize() {
   const p = params[current];
+  const d = DEFAULTS[current];
   const rng = Math.random;
+
+  if (!d) return;
+
+  // Fully randomize based on slider HTML definitions to ensure ranges are respected
+  // It's safer to pull min/max from the DOM inputs since DEFAULTS doesn't store bounds natively
+  const sc = document.getElementById('sidebar-content');
+  const ranges = sc.querySelectorAll('input[type="range"]');
+  ranges.forEach(r => {
+    const id = r.id;
+    if (id && typeof p[id] === 'number') {
+      const min = parseFloat(r.min);
+      const max = parseFloat(r.max);
+      let step = parseFloat(r.step);
+      if (isNaN(step) || step <= 0) step = 1;
+
+      let randVal = min + rng() * (max - min);
+      // Snap to step
+      randVal = Math.round(randVal / step) * step;
+      p[id] = randVal;
+    }
+  });
+
+  const selects = sc.querySelectorAll('select');
+  selects.forEach(s => {
+    const id = s.id;
+    if (id && p[id] !== undefined) {
+      if (id === 'palette') {
+        p.palette = GS.randPalette(rng);
+      } else {
+        const options = Array.from(s.options);
+        const randOpt = options[Math.floor(rng() * options.length)].value;
+        p[id] = randOpt;
+      }
+    }
+  });
+
+  const togs = sc.querySelectorAll('.tog');
+  togs.forEach(t => {
+    const id = t.id;
+    if (id && typeof p[id] === 'boolean') {
+      p[id] = rng() > 0.5;
+    }
+  });
+
+  // Always randomize seed if it exists, regardless of sliders
   if ('seed' in p) p.seed = Math.floor(rng() * 99999);
-  if ('palette' in p) p.palette = GS.randPalette(rng);
+
   // Re-init sidebar to reflect new values
   switchTool(current);
   GS.toast('Randomized');
@@ -981,7 +1027,30 @@ function init() {
 
       try {
           if (!TOOLS[current]) return;
-          TOOLS[current].render(proxyCanvas, realCtx, p, loadedImage);
+
+          // Instead of modifying p.w/p.h (which breaks unscaled drawing logic),
+          // we use the original dimensions and scale the context.
+          // This guarantees 1:1 visual parity with the viewport at higher resolutions.
+          p.w = baseW;
+          p.h = baseH;
+
+          realCtx.save();
+          realCtx.scale(scale, scale);
+
+          const proxyCanvasScaled = {
+            width: baseW,
+            height: baseH,
+            getContext: () => realCtx,
+            toDataURL: (...args) => realCanvas.toDataURL(...args)
+          };
+
+          TOOLS[current].render(proxyCanvasScaled, realCtx, p, loadedImage);
+          realCtx.restore();
+
+          // Apply post-FX if they exist, scaled appropriately
+          if (window.globalFX && typeof applyPostFX === 'function') {
+             applyPostFX(realCtx, exportW, exportH, window.globalFX);
+          }
 
           if (format === 'png') GS.exportPNG(realCanvas, current);
           if (format === 'jpg') GS.exportJPG(realCanvas, current);
@@ -998,21 +1067,6 @@ function init() {
 
   document.getElementById('btn-reset')?.addEventListener('click', () => {
     resetParams(current); switchTool(current); GS.toast('Reset');
-  });
-
-  // Copy CSS button
-  document.getElementById('btn-css')?.addEventListener('click', () => {
-    const p = params[current];
-    const bg = p.bg || '#000000';
-    let css = `background-color: ${bg};\n`;
-    if (p.stops) {
-      css += `background-image: linear-gradient(90deg, ${p.stops.map(s => `${s[1]} ${s[0]*100}%`).join(', ')});\n`;
-    }
-    navigator.clipboard.writeText(css).then(() => {
-      GS.toast('CSS Copied to clipboard!');
-    }).catch(() => {
-      GS.toast('Failed to copy CSS');
-    });
   });
 
   // Keyboard

@@ -103,7 +103,7 @@ function T(id, name, val) {
   return `<div class="tog-row"><span class="tog-lbl">${name}</span><button class="tog${val?' on':''}" id="${id}"></button></div>`;
 }
 function SEC(title, body, open=true) {
-  return `<div class="sec${open?'':' closed'}"><div class="sec-hdr"><span class="sec-title">${title}</span><span class="sec-arrow">▾</span></div><div class="sec-body">${body}</div></div>`;
+  return `<div class="sec${open?'':' closed'}"><div class="sec-hdr"><span class="sec-title">${title}</span><span class="sec-arrow"></span></div><div class="sec-body">${body}</div></div>`;
 }
 const PAL_OPTS = GS.PALETTE_NAMES;
 

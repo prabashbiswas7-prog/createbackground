@@ -7,6 +7,53 @@ const TOOLS = {};
 // ── 1. BLOCKS ────────────────────────────────────────────────
 TOOLS.blocks = {
   name: 'Blocks', icon: '⊞',
+  randomize(p) {
+    // Override pure randomness with curated, "good looking" combinations
+    const rng = Math.random;
+
+    // Most of the time, keep rotation simple
+    if (rng() > 0.3) p.rotation = 0;
+    else p.rotation = Math.floor(rng() * 45); // Limit rotation range
+
+    // Keep rotation jitter low
+    if (rng() > 0.2) p.rotationJitter = 0;
+    else p.rotationJitter = Math.floor(rng() * 15);
+
+    // Keep sparsity reasonable
+    if (rng() > 0.4) p.sparsity = 0;
+    else p.sparsity = Math.floor(rng() * 30);
+
+    // Occasional inner shapes
+    if (rng() > 0.3) p.innerShapes = 0;
+    else p.innerShapes = 1 + Math.floor(rng() * 4);
+
+    // Occasional shadows
+    if (rng() > 0.4) {
+      p.shadowIntensity = 0;
+      p.shadowBlur = 0;
+    } else {
+      p.shadowIntensity = 20 + Math.floor(rng() * 60);
+      p.shadowBlur = 5 + Math.floor(rng() * 45);
+      p.shadowX = -20 + Math.floor(rng() * 40);
+      p.shadowY = 5 + Math.floor(rng() * 35);
+    }
+
+    // Balance gradients and patterns
+    if (rng() > 0.2) p.gradientChance = 0;
+    else p.gradientChance = 10 + Math.floor(rng() * 50);
+
+    if (rng() > 0.2) p.patternChance = 0;
+    else p.patternChance = 10 + Math.floor(rng() * 50);
+
+    // If both are high, lower one
+    if (p.gradientChance > 0 && p.patternChance > 0) {
+       if (rng() > 0.5) p.gradientChance = 0;
+       else p.patternChance = 0;
+    }
+
+    // Keep basic layout sane
+    if (p.complexity > 7 && rng() > 0.3) p.complexity = 3 + rng() * 4;
+  },
   render(C, cx, p) {
     const W = C.width, H = C.height;
     const rng = GS.seededRng(p.seed);

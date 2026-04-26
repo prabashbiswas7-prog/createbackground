@@ -896,6 +896,11 @@ function randomize() {
   // Always randomize seed if it exists, regardless of sliders
   if ('seed' in p) p.seed = Math.floor(rng() * 99999);
 
+  // Apply curated tool-specific randomization overrides if available
+  if (TOOLS[current] && TOOLS[current].randomize) {
+      TOOLS[current].randomize(p);
+  }
+
   // Re-init sidebar to reflect new values
   switchTool(current);
   GS.toast('Randomized');

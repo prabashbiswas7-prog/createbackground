@@ -1521,3 +1521,188 @@ TOOLS.matrix = {
     GS.applyPostFX(cx, W, H, p);
   }
 };
+
+// ── 26. AMBIENT GLOWS ────────────────────────────────────────
+TOOLS.ambient = {
+  name: 'Ambient', icon: '☁',
+  randomize(p) {
+    p.count = 2 + Math.floor(Math.random() * 8);
+    p.baseSize = 20 + Math.floor(Math.random() * 50);
+    p.blur = 30 + Math.floor(Math.random() * 50);
+    p.opacity = 20 + Math.floor(Math.random() * 60);
+  },
+  render(canvas, ctx, p) {
+    const w = canvas.width, h = canvas.height;
+    const rng = GS.seededRng(p.seed || 0);
+    const colors = GS.getPalette(p.palette);
+
+    ctx.fillStyle = p.bg || '#050505';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.globalCompositeOperation = p.blendMode || 'screen';
+    ctx.globalAlpha = (p.opacity !== undefined ? p.opacity : 100) / 100;
+
+    const count = p.count || 5;
+    const baseSize = p.baseSize || 40;
+
+    for (let i = 0; i < count; i++) {
+      const cx = rng() * w;
+      const cy = rng() * h;
+      let r = (rng() * 0.5 + 0.5) * baseSize * Math.max(w, h) / 100;
+      if (isNaN(r) || r <= 0) r = 100;
+
+      const col = colors[Math.floor(rng() * colors.length)] || '#ffffff';
+
+      ctx.beginPath();
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, col);
+
+      let rgbaCol = 'rgba(0,0,0,0)';
+      if (col.startsWith('#')) {
+          const hex = col.replace('#','');
+          if (hex.length === 6) {
+              const hr = parseInt(hex.substring(0,2), 16);
+              const hg = parseInt(hex.substring(2,4), 16);
+              const hb = parseInt(hex.substring(4,6), 16);
+              rgbaCol = `rgba(${hr},${hg},${hb},0)`;
+          }
+      } else if (col.startsWith('rgba')) {
+          rgbaCol = col.replace(/[\d.]+\)$/g, '0)');
+      }
+      grad.addColorStop(1, rgbaCol);
+
+      ctx.fillStyle = grad;
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1.0;
+
+    if (typeof GS.applyPostFX === 'function') {
+        GS.applyPostFX(ctx, w, h, p);
+    }
+  }
+};
+
+// ── 27. GRID ──────────────────────────────────────────────────
+TOOLS.grid = {
+  name: 'Grid', icon: '▦',
+  randomize(p) {
+    p.spacing = 10 + Math.floor(Math.random() * 90);
+    p.thickness = 1 + Math.floor(Math.random() * 4);
+    p.rotation = Math.floor(Math.random() * 90);
+    p.opacity = 20 + Math.floor(Math.random() * 80);
+  },
+  render(canvas, ctx, p) {
+    const w = canvas.width, h = canvas.height;
+    const colors = GS.getPalette(p.palette);
+    const lineColor = p.lineColor || colors[0] || '#ffffff';
+
+    ctx.fillStyle = p.bg || '#050505';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.save();
+    ctx.translate(w/2, h/2);
+    ctx.rotate(((p.rotation || 0) * Math.PI) / 180);
+
+    const diag = Math.sqrt(w*w + h*h) * 1.5;
+    const halfDiag = diag / 2;
+
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = Math.max(0.1, p.thickness || 1);
+    ctx.globalAlpha = (p.opacity !== undefined ? p.opacity : 100) / 100;
+
+    if (p.dashArray > 0) {
+        ctx.setLineDash([p.dashArray, p.dashArray * 2]);
+    } else {
+        ctx.setLineDash([]);
+    }
+
+    const spacing = Math.max(2, p.spacing || 30);
+
+    ctx.beginPath();
+    for (let x = -halfDiag; x <= halfDiag; x += spacing) {
+        ctx.moveTo(x, -halfDiag);
+        ctx.lineTo(x, halfDiag);
+    }
+    for (let y = -halfDiag; y <= halfDiag; y += spacing) {
+        ctx.moveTo(-halfDiag, y);
+        ctx.lineTo(halfDiag, y);
+    }
+    ctx.stroke();
+
+    ctx.restore();
+    ctx.globalAlpha = 1.0;
+
+    if (typeof GS.applyPostFX === 'function') {
+        GS.applyPostFX(ctx, w, h, p);
+    }
+  }
+};
+
+// ── 28. CONTOURS ──────────────────────────────────────────────
+TOOLS.contours = {
+  name: 'Contours', icon: '〰',
+  randomize(p) {
+    p.count = 10 + Math.floor(Math.random() * 40);
+    p.noiseScale = 1 + Math.floor(Math.random() * 9);
+    p.thickness = 1 + Math.floor(Math.random() * 4);
+  },
+  render(canvas, ctx, p) {
+    const w = canvas.width, h = canvas.height;
+    const rng = GS.seededRng(p.seed || 0);
+    const colors = GS.getPalette(p.palette);
+
+    ctx.fillStyle = p.bg || '#050505';
+    ctx.fillRect(0, 0, w, h);
+
+    const noiseScale = (p.noiseScale || 5) * 0.005;
+    const lineThickness = Math.max(0.1, p.thickness || 2);
+    const count = Math.max(1, p.count || 30);
+    const amplitude = p.amplitude || 100;
+    const steps = w / 4;
+    const stepSize = Math.max(1, w / steps);
+
+    ctx.globalAlpha = (p.opacity !== undefined ? p.opacity : 100) / 100;
+
+    for (let i = 0; i < count; i++) {
+        ctx.beginPath();
+
+        let col = p.lineColor;
+        if (p.colorMode === 'palette' && colors.length > 0) {
+            col = colors[i % colors.length];
+        } else if (!col) {
+             col = '#ffffff';
+        }
+
+        ctx.strokeStyle = col;
+        ctx.lineWidth = lineThickness;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        const startY = (i / count) * h;
+
+        for (let x = 0; x <= w; x += stepSize) {
+            let n = 0;
+            if (typeof GS !== 'undefined' && typeof GS.noise2 === 'function') {
+                n = GS.noise2(x * noiseScale, startY * noiseScale + (p.seed || 0) * 0.1);
+            } else {
+                n = Math.sin(x * noiseScale + (p.seed || 0)) * Math.cos(startY * noiseScale);
+            }
+
+            const y = startY + n * amplitude;
+
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1.0;
+
+    if (typeof GS.applyPostFX === 'function') {
+        GS.applyPostFX(ctx, w, h, p);
+    }
+  }
+};

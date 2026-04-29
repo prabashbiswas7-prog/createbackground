@@ -7,7 +7,8 @@ const TOOL_ORDER = [
   'blocks','gradients','lines','organic','plotter','topo','marble',
   'ascii','dither','noise','circles','typography','waves','voronoi',
   'fractal','pixelSort','truchet','crystal','spirograph','flowField',
-  'space','nature','clouds','paint','matrix'
+  'space','nature','clouds','paint','matrix',
+  'ambient','grid','contours'
 ];
 
 // ── Default params ────────────────────────────────────────────
@@ -37,6 +38,15 @@ const DEFAULTS = {
   clouds:    { w:1200,h:1200,seed:42,scale:3,octaves:5,cover:50,sharpness:0.9,bg1:'#4A90E2',bg2:'#87CEEB',cloudColor:'#ffffff',shadowColor:'#aaccff' },
   paint:     { w:1200,h:1200,seed:42,strokes:1500,length:80,thickness:30,scale:2,curl:1,opacity:80,bristles:20,palette:'Mondrian',bg:'#f0f0f0' },
   matrix:    { w:1200,h:1200,seed:42,fontSize:20,speed:1,length:25,time:0,headColor:'#ffffff',tailColor:'#00ff41',bg:'#000000',glow:10 },
+
+  ambient: { w:1200,h:1200, bg: '#050505', palette: 'Terminal', opacity: 50, blendMode: 'screen', seed: 0, count: 5, baseSize: 50, blur: 100 },
+  grid: { w:1200,h:1200, bg: '#050505', lineColor: '#333333', palette: 'Terminal', seed: 0, spacing: 40, thickness: 1, rotation: 0, opacity: 100, dashArray: 0 },
+  contours: { w:1200,h:1200, bg: '#050505', palette: 'Terminal', colorMode: 'palette', lineColor: '#ffffff', seed: 0, count: 30, noiseScale: 5, thickness: 2, amplitude: 100, opacity: 100 },
+
+
+
+
+
 };
 
 // ── State ─────────────────────────────────────────────────────
@@ -588,6 +598,54 @@ function buildPanel(tool) {
         R('speed','Speed Var',p.speed,0.1,3,0.1) +
         R('time','Time Offset',p.time,0,1000,1)
       )
+,
+
+
+
+    ambient: SEC('Color',
+        C2('bg','Background',p.bg) +
+        PAL(p) +
+        R('opacity','Opacity',p.opacity,10,100,1) +
+        S('blendMode','Blend Mode',['screen','lighter','overlay','color-dodge','normal'],p.blendMode)
+      ) +
+      SEC('Shape',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('count','Count',p.count,1,50,1) +
+        R('baseSize','Base Size',p.baseSize,10,200,1) +
+        R('blur','Blur',p.blur,0,200,1)
+      ),
+
+    grid: SEC('Color',
+        C2('bg','Background',p.bg) +
+        PAL(p) +
+        C2('lineColor','Line Color',p.lineColor)
+      ) +
+      SEC('Grid',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('spacing','Spacing',p.spacing,2,200,1) +
+        R('thickness','Thickness',p.thickness,0.1,20,0.1) +
+        R('rotation','Rotation',p.rotation,0,360,1) +
+        R('opacity','Opacity',p.opacity,0,100,1) +
+        R('dashArray','Dash',p.dashArray,0,100,1)
+      ),
+
+    contours: SEC('Color',
+        C2('bg','Background',p.bg) +
+        PAL(p) +
+        S('colorMode','Color Mode',['palette','single'],p.colorMode) +
+        C2('lineColor','Line Color',p.lineColor)
+      ) +
+      SEC('Flow',
+        R('seed','Seed',p.seed,0,9999,1) +
+        R('count','Count',p.count,1,200,1) +
+        R('noiseScale','Noise Scale',p.noiseScale,1,100,1) +
+        R('thickness','Thickness',p.thickness,0.1,20,0.1) +
+        R('amplitude','Amplitude',p.amplitude,0,500,1) +
+        R('opacity','Opacity',p.opacity,0,100,1)
+      )
+
+
+
   };
   return panels[tool] || SEC('Controls', '<p style="color:var(--text4);font-size:10px;padding:4px">No controls for this tool.</p>');
 }

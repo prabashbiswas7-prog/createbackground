@@ -280,9 +280,16 @@ body {
   width: 150px;
 }
 
+.fx-item label {
+  width: 60px; /* Fixed width for labels to align sliders */
+  text-align: right;
+}
+
+
 .fx-item input[type=range] {
   margin: 0;
   flex: 1;
+  min-width: 80px;
 }
 
 /* Bottom Bar */
@@ -407,7 +414,7 @@ button {
 
 input[type=range] {
   -webkit-appearance: none; flex: 1; height: 2px; background: var(--border-color);
-  outline: none; margin: 0 12px;
+  outline: none; margin: 0 12px; width: 100%;
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none; width: 12px; height: 12px; background: var(--accent-green);

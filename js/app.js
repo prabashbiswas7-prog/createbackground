@@ -4,7 +4,7 @@
 const App = (() => {
 
 const TOOL_ORDER = [
-  'blocks','gradients','lines','organic','plotter','topo','marble',
+  'blocks','gradients','meshGradient','blobs','sideWaves','lines','organic','plotter','topo','marble',
   'ascii','dither','noise','circles','typography','waves','voronoi',
   'fractal','pixelSort','truchet','crystal','spirograph','flowField',
   'space','nature','clouds','paint','matrix',
@@ -38,6 +38,10 @@ const DEFAULTS = {
   clouds:    { w:1200,h:1200,seed:42,scale:3,octaves:5,cover:50,sharpness:0.9,bg1:'#4A90E2',bg2:'#87CEEB',cloudColor:'#ffffff',shadowColor:'#aaccff' },
   paint:     { w:1200,h:1200,seed:42,strokes:1500,length:80,thickness:30,scale:2,curl:1,opacity:80,bristles:20,palette:'Mondrian',bg:'#f0f0f0' },
   matrix:    { w:1200,h:1200,seed:42,fontSize:20,speed:1,length:25,time:0,headColor:'#ffffff',tailColor:'#00ff41',bg:'#000000',glow:10 },
+
+  meshGradient: { w:1200,h:1200, seed: 0, bg: '#ffffff', palette: 'Terminal', points: 6, spread: 50, blur: 100, noise: 0 },
+  blobs: { w:1200,h:1200, seed: 0, bg: '#ffffff', palette: 'Terminal', count: 3, complexity: 5, contrast: 50, scale: 50, style: 'solid', stroke: 2 },
+  sideWaves: { w:1200,h:1200, seed: 0, bg: '#ffffff', palette: 'Terminal', layers: 5, peaks: 3, amplitude: 50, angle: 0, style: 'solid', stroke: 2, offset: 0 },
 
   ambient: { w:1200,h:1200, bg: '#050505', palette: 'Terminal', opacity: 50, blendMode: 'screen', seed: 0, count: 5, baseSize: 50, blur: 100 },
   grid: { w:1200,h:1200, bg: '#050505', lineColor: '#333333', palette: 'Terminal', seed: 0, spacing: 40, thickness: 1, rotation: 0, opacity: 100, dashArray: 0 },
@@ -154,6 +158,47 @@ function buildPanel(tool) {
         R('shadowY','Shadow Y',p.shadowY,-50,50,1) +
         R('shadowIntensity','Shadow Intensity',p.shadowIntensity,0,100,1)
       ) ,
+
+    meshGradient: SEC('Color',
+        C2('bg', 'Background', p.bg) +
+        PAL(p)
+      ) +
+      SEC('Mesh',
+        R('seed', 'Seed', p.seed, 0, 9999, 1) +
+        R('points', 'Points', p.points, 2, 20, 1) +
+        R('spread', 'Spread', p.spread, 10, 100, 1) +
+        R('blur', 'Blur', p.blur, 0, 200, 1) +
+        R('noise', 'Noise', p.noise, 0, 100, 1)
+      ),
+
+    blobs: SEC('Color',
+        C2('bg', 'Background', p.bg) +
+        PAL(p) +
+        S('style', 'Style', ['solid', 'outline'], p.style)
+      ) +
+      SEC('Shape',
+        R('seed', 'Seed', p.seed, 0, 9999, 1) +
+        R('count', 'Blobs', p.count, 1, 10, 1) +
+        R('complexity', 'Complexity', p.complexity, 3, 20, 1) +
+        R('contrast', 'Contrast', p.contrast, 0, 100, 1) +
+        R('scale', 'Scale', p.scale, 10, 200, 1) +
+        R('stroke', 'Stroke Weight', p.stroke, 1, 20, 1)
+      ),
+
+    sideWaves: SEC('Color',
+        C2('bg', 'Background', p.bg) +
+        PAL(p) +
+        S('style', 'Style', ['solid', 'outline', 'both'], p.style)
+      ) +
+      SEC('Wave',
+        R('seed', 'Seed', p.seed, 0, 9999, 1) +
+        R('layers', 'Layers', p.layers, 1, 20, 1) +
+        R('peaks', 'Peaks', p.peaks, 1, 10, 1) +
+        R('amplitude', 'Amplitude', p.amplitude, 0, 100, 1) +
+        R('angle', 'Angle', p.angle, 0, 360, 1) +
+        R('stroke', 'Stroke Weight', p.stroke, 1, 20, 1) +
+        R('offset', 'Offset', p.offset, -50, 100, 1)
+      ),
 
     gradients: SEC('Color',
         PAL(p) +

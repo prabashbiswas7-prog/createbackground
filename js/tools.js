@@ -4,6 +4,72 @@
 // ═══════════════════════════════════════════════════════════════
 const TOOLS = {};
 
+// ── NEW. BLOBS ────────────────────────────────────────────────
+TOOLS.blobs = {
+  name: 'Blobs', icon: '✿',
+  randomize(p) {
+    p.count = 2 + Math.floor(Math.random() * 6);
+    p.complexity = 3 + Math.floor(Math.random() * 7);
+    p.contrast = 30 + Math.floor(Math.random() * 50);
+    p.scale = 30 + Math.floor(Math.random() * 60);
+    p.style = ['solid', 'outline', 'both'][Math.floor(Math.random() * 3)];
+  },
+  render(canvas, ctx, p) {
+    const W = canvas.width, H = canvas.height;
+    const rng = GS.seededRng(p.seed || 0);
+    const pal = GS.getPalette(p.palette);
+
+    ctx.fillStyle = p.bg || '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    const count = parseInt(p.count) || 3;
+    const complexity = parseInt(p.complexity) || 5;
+    const contrast = (parseInt(p.contrast) || 50) / 100;
+    const scale = (parseInt(p.scale) || 50) / 100;
+    const strokeWidth = parseInt(p.stroke) || 2;
+    const rBase = Math.min(W, H) * scale;
+
+    for (let i = 0; i < count; i++) {
+      const cx = W * (0.2 + rng() * 0.6);
+      const cy = H * (0.2 + rng() * 0.6);
+      const col = pal[i % pal.length];
+
+      ctx.beginPath();
+      const steps = Math.max(3, complexity * 2);
+      const offsetRng = GS.seededRng((p.seed||0) + i * 100);
+
+      const points = [];
+      for (let j = 0; j < steps; j++) {
+        const a = (j / steps) * Math.PI * 2;
+        const rVar = 1 - contrast + (offsetRng() * contrast * 2);
+        const r = rBase * rVar;
+        points.push({
+          x: cx + Math.cos(a) * r,
+          y: cy + Math.sin(a) * r
+        });
+      }
+
+      // Catmull-Rom spline or simple quadratic curve to smooth
+      ctx.moveTo((points[0].x + points[steps-1].x)/2, (points[0].y + points[steps-1].y)/2);
+      for(let j=0; j<steps; j++) {
+        const p1 = points[j];
+        const p2 = points[(j+1)%steps];
+        const mx = (p1.x + p2.x)/2;
+        const my = (p1.y + p2.y)/2;
+        ctx.quadraticCurveTo(p1.x, p1.y, mx, my);
+      }
+      ctx.closePath();
+
+      ctx.lineWidth = strokeWidth;
+      ctx.strokeStyle = col;
+      ctx.fillStyle = col;
+
+      if (p.style === 'solid' || p.style === 'both') ctx.fill();
+      if (p.style === 'outline' || p.style === 'both') ctx.stroke();
+    }
+  }
+};
+
 // ── 1. BLOCKS ────────────────────────────────────────────────
 TOOLS.blocks = {
   name: 'Blocks', icon: '⊞',
@@ -223,6 +289,80 @@ TOOLS.blocks = {
   }
 };
 
+// ── MESH GRADIENT ─────────────────────────────────────────────
+TOOLS.meshGradient = {
+  name: 'Mesh', icon: '⚄',
+  randomize(p) {
+    p.points = 3 + Math.floor(Math.random() * 8);
+    p.spread = 20 + Math.floor(Math.random() * 60);
+    p.blur = 50 + Math.floor(Math.random() * 100);
+  },
+  render(canvas, ctx, p) {
+    const W = canvas.width, H = canvas.height;
+    const rng = GS.seededRng(p.seed || 0);
+    const pal = GS.getPalette(p.palette);
+
+    ctx.fillStyle = p.bg || '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    const count = p.points || 6;
+    const spread = (p.spread || 50) / 100;
+    const blurAmt = (p.blur !== undefined ? p.blur : 100);
+
+    // We render points to a temporary canvas so we can blur them massively
+    const tmp = document.createElement('canvas');
+    tmp.width = W; tmp.height = H;
+    const tctx = tmp.getContext('2d');
+
+    // Draw points with radial gradients
+    for(let i=0; i<count; i++) {
+        // Base coordinate with spread
+        const cx = W/2 + (rng() - 0.5) * W * spread * 2;
+        const cy = H/2 + (rng() - 0.5) * H * spread * 2;
+
+        // Base radius
+        const r = Math.max(W, H) * (0.3 + rng() * 0.4);
+        const col = pal[i % pal.length];
+
+        // Convert to rgba for gradient
+        let rgbaCol = 'rgba(0,0,0,0)';
+        if (col.startsWith('#')) {
+            const hex = col.replace('#','');
+            if (hex.length === 6) {
+                const hr = parseInt(hex.substring(0,2), 16);
+                const hg = parseInt(hex.substring(2,4), 16);
+                const hb = parseInt(hex.substring(4,6), 16);
+                rgbaCol = `rgba(${hr},${hg},${hb},0)`;
+            }
+        }
+
+        const grad = tctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        grad.addColorStop(0, col);
+        grad.addColorStop(1, rgbaCol);
+
+        tctx.globalCompositeOperation = 'screen';
+        tctx.fillStyle = grad;
+        tctx.beginPath();
+        tctx.arc(cx, cy, r, 0, Math.PI * 2);
+        tctx.fill();
+    }
+
+    // Apply blur via filter or manual
+    ctx.filter = `blur(${blurAmt}px)`;
+    ctx.drawImage(tmp, 0, 0);
+    ctx.filter = 'none';
+
+    // Apply noise
+    if (p.noise > 0) {
+        GS.applyGrain(ctx, W, H, p.noise);
+    }
+
+    if (typeof GS.applyPostFX === 'function') {
+        GS.applyPostFX(ctx, W, H, p);
+    }
+  }
+};
+
 // ── 2. GRADIENTS ─────────────────────────────────────────────
 TOOLS.gradients = {
   name: 'Gradients', icon: '◑',
@@ -293,6 +433,94 @@ TOOLS.gradients = {
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
     cx.setLineDash([]); cx.shadowBlur = 0;
     GS.applyPostFX(cx, W, H, p);
+  }
+};
+
+// ── NEW. SIDE WAVES ──────────────────────────────────────────
+TOOLS.sideWaves = {
+  name: 'Side Waves', icon: '⧘',
+  randomize(p) {
+    p.layers = 3 + Math.floor(Math.random() * 8);
+    p.peaks = 1 + Math.floor(Math.random() * 4);
+    p.amplitude = 20 + Math.floor(Math.random() * 60);
+    p.gap = 5 + Math.floor(Math.random() * 20);
+    p.angle = Math.floor(Math.random() * 360);
+    p.style = ['solid', 'outline', 'both'][Math.floor(Math.random() * 3)];
+  },
+  render(canvas, ctx, p) {
+    const W = canvas.width, H = canvas.height;
+    const rng = GS.seededRng(p.seed || 0);
+    const pal = GS.getPalette(p.palette);
+
+    ctx.fillStyle = p.bg || '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    const layers = parseInt(p.layers) || 5;
+    const peaks = parseInt(p.peaks) || 2;
+    const amp = (parseInt(p.amplitude) || 50) / 100 * (Math.min(W, H) / 2);
+    const gap = (parseInt(p.gap) || 10) / 100 * (Math.min(W, H) / 2);
+    const angle = parseInt(p.angle) || 0;
+    const strokeWidth = parseInt(p.stroke) || 2;
+
+    ctx.save();
+    ctx.translate(W/2, H/2);
+    ctx.rotate(angle * Math.PI / 180);
+    ctx.translate(-W/2, -H/2);
+
+    // To cover the canvas when rotated, we draw much wider
+    const drawW = W * 2;
+    const drawH = H * 2;
+    const startX = -W/2;
+    const endX = W + W/2;
+
+    // Draw from bottom up or top down
+    // Actually, drawing stacked from a specific baseline
+    const baseline = H * 0.8;
+
+    for (let i = layers - 1; i >= 0; i--) {
+      const col = pal[i % pal.length];
+      const yOffset = baseline - (i * gap * 2);
+
+      const points = [];
+      const steps = 50; // resolution
+
+      const phase = rng() * Math.PI * 2;
+
+      for (let j = 0; j <= steps; j++) {
+        const t = j / steps;
+        const x = startX + t * (endX - startX);
+
+        // Combine a few sine waves
+        const yBase = Math.sin(t * Math.PI * 2 * peaks + phase) * amp;
+        const yNoise = Math.sin(t * Math.PI * 4 * peaks + phase * 1.5) * (amp * 0.3);
+
+        points.push({ x, y: yOffset + yBase + yNoise });
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, drawH); // start bottom left
+      ctx.lineTo(points[0].x, points[0].y); // up to first point
+
+      // smooth curve through points
+      for (let j = 0; j < points.length - 1; j++) {
+        const xc = (points[j].x + points[j + 1].x) / 2;
+        const yc = (points[j].y + points[j + 1].y) / 2;
+        ctx.quadraticCurveTo(points[j].x, points[j].y, xc, yc);
+      }
+      // last point
+      ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+      ctx.lineTo(points[points.length - 1].x, drawH); // down to bottom right
+      ctx.closePath();
+
+      ctx.lineWidth = strokeWidth;
+      ctx.strokeStyle = col;
+      ctx.fillStyle = col;
+
+      if (p.style === 'solid' || p.style === 'both') ctx.fill();
+      if (p.style === 'outline' || p.style === 'both') ctx.stroke();
+    }
+
+    ctx.restore();
   }
 };
 

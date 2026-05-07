@@ -16,7 +16,7 @@ const DEFAULTS = {
   blocks:    { w:1200,h:1200,seed:42,type:'Mondrian',count:10,complexity:4,asymmetry:50,bg:'#ffffff',palette:'Mondrian',density:40,stroke:2,lineColor:'#111111',wobble:40,minSize:24,padding:0,rounding:0,opacity:100,splitBias:50,rotation:0,rotationJitter:0,sparsity:0,innerShapes:0,gradientChance:0,patternChance:0,shadowBlur:0,shadowX:0,shadowY:0,shadowIntensity:50 },
   gradients: { w:1200,h:1200,seed:0,angle:45,noiseScale:2,noiseIntensity:55,curveDist:70,detail:2,depth:60,highlights:50,shadows:55,brightness:0,contrast:100,saturation:100,palette:'Purple Dream',gradientType:'Linear',zoom:100,offsetX:0,offsetY:0,blendMode:'Normal' },
   lines:     { w:1200,h:1200,seed:42,shape:'Sine Waves',frequency:0.026,amplitude:68,count:40,padding:50,thickness:1.5,bg:'#0a0a0f',bg2:'#1a0a3a',lineColor:'#00ff41',lineColor2:'#003a0f',colorGradient:true,bgGradient:false,weightVar:0,wobble:0,opacityVar:0,rotationJitter:0,colorDrift:0,freqVar:0,halftone:0,dashArray:0,glow:0,lineCap:'round',lineJoin:'round' },
-  organic:   { w:1200,h:1200,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,amplitude:55,frequency:0.056,harmonics:3,wobble:12,roughness:12,colorMode:'gradient',bg:'#050505',palette:'Terminal',shadowBlur:0,shadowX:0,shadowY:0,scale:100,stops:[[0,'#00ff41'],[0.5,'#003a0f'],[1,'#00ff41']] },
+  organic:   { w:1200,h:1200,seed:35025,pathType:'Waves',pathCount:51,lineWeight:34,amplitude:55,frequency:0.056,harmonics:3,wobble:12,roughness:12,warp:50,dripAmount:50,dripScale:50,colorMode:'gradient',bg:'#050505',palette:'Terminal',shadowBlur:0,shadowX:0,shadowY:0,scale:100,stops:[[0,'#00ff41'],[0.5,'#003a0f'],[1,'#00ff41']] },
   plotter:   { w:1200,h:1200,seed:12345,type:'Dot Grid',columns:20,rows:20,jitter:0,shape:'Circle',minSize:4,maxSize:24,strokeWeight:1,filled:true,rotation:0,wobble:0,noiseScale:0.02,noiseIntensity:1,palette:'Terminal',bg:'#050505',margin:40,shapeVar:0,rotateJit:0,scaleJit:0 },
   topo:      { w:1200,h:1200,seed:12345,levels:20,noiseScale:0.008,octaves:4,falloff:0.5,strokeWeight:1.5,wobble:0,smoothing:50,bg:'#050505',mode:'Single',lineColor:'#00ff41',opacity:100,margin:20 },
   marble:    { w:1200,h:1200,seed:0,noiseScale:1,wind:0,warp:0,fbmStrength:1,fbmDamping:1,main:'#f0ece0',low:'#c8bfab',mid:'#9b8e7a',high:'#fff9f0',strength:1 },
@@ -269,7 +269,7 @@ function buildPanel(tool) {
       ) +
       SEC('Paths',
         R('seed','Seed',p.seed,0,99999,1) +
-        S('pathType','Type',['Waves','Filled','Curl','Strand'],p.pathType) +
+        S('pathType','Type',['Waves','Filled','Curl','Strand','Liquid'],p.pathType) +
         R('pathCount','Path Count',p.pathCount,1,200,1) +
         R('lineWeight','Line Weight',p.lineWeight,0.1,80,0.5) +
         R('scale','Scale',p.scale,10,300,1,'%')
@@ -279,7 +279,10 @@ function buildPanel(tool) {
         R('frequency','Frequency',p.frequency,0.005,0.5,0.005) +
         R('harmonics','Harmonics',p.harmonics,1,8,1) +
         R('wobble','Wobble',p.wobble,0,100,1) +
-        R('roughness','Roughness',p.roughness,0,100,1)
+        R('roughness','Roughness',p.roughness,0,100,1) +
+        R('warp','Warp',p.warp,0,100,1) +
+        R('dripAmount','Drip Amount',p.dripAmount,0,100,1) +
+        R('dripScale','Drip Scale',p.dripScale,0,100,1)
       ) +
       SEC('Shadow',
         R('shadowBlur','Shadow Blur',p.shadowBlur,0,100,1) +

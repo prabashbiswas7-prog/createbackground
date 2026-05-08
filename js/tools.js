@@ -644,36 +644,93 @@ TOOLS.organic = {
     cx.fillStyle = p.bg; cx.fillRect(0, 0, W, H);
     const stops = p.stops || [[0,'#00ff41'],[1,'#003a0f']];
 
-    for (let pi2 = 0; pi2 < p.pathCount; pi2++) {
-      const t = pi2 / p.pathCount;
-      const col = p.colorMode === 'gradient' ? GS.gradientAt(stops, t)
-        : GS.getPalette(p.palette||'Terminal')[Math.floor(rng()*5)];
-      cx.strokeStyle = col;
-      cx.lineWidth = p.lineWeight * (0.4 + rng() * 0.6);
-      cx.globalAlpha = 0.6 + rng() * 0.4;
-      cx.beginPath();
+    if (p.pathType === 'Liquid') {
+       const N = p.pathCount;
+       for (let i = 1; i < N; i++) {
+           const t = i / (N - 1 || 1);
+           const col = p.colorMode === 'gradient' ? GS.gradientAt(stops, t)
+             : GS.getPalette(p.palette||'Terminal')[i % GS.getPalette(p.palette||'Terminal').length];
 
-      let px = rng() * W, py = rng() * H;
-      cx.moveTo(px, py);
-      const steps = 60 + Math.floor(rng() * 40);
-      for (let s = 0; s < steps; s++) {
-        const ang = GS.fbm(px/W*p.frequency + p.seed/100, py/H*p.frequency + p.seed/100, 3) * Math.PI * 2 * p.harmonics;
-        const wob = (rng()-0.5) * p.wobble * 0.5;
-        const sp = (p.amplitude / steps) * 3;
-        const nx = px + Math.cos(ang + wob) * sp;
-        const ny = py + Math.sin(ang + wob) * sp;
-        if (p.roughness > 0) {
-          cx.bezierCurveTo(
-            px+(rng()-0.5)*p.roughness, py+(rng()-0.5)*p.roughness,
-            nx+(rng()-0.5)*p.roughness, ny+(rng()-0.5)*p.roughness,
-            nx, ny
-          );
-        } else { cx.lineTo(nx, ny); }
-        px = Math.max(0, Math.min(W, nx));
-        py = Math.max(0, Math.min(H, ny));
+           cx.fillStyle = col;
+           cx.beginPath();
+           cx.moveTo(0, 0);
+
+           const phase = p.seed + i * 5;
+           const baseY = t * H * 1.5 - H * 0.2;
+
+           let points = [];
+           const warpAmt = (p.warp || 50) / 100 * 5.0;
+           const dAmt = (p.dripAmount || 50) / 100;
+           const dScale = (p.dripScale || 50) / 100 * 5;
+
+           for (let x = -W*0.2; x <= W*1.2; x += 10) {
+               const nx = x / W * (p.frequency || 0.05) * 10;
+
+               // Domain warp for groovy drip effect
+               const wx = GS.fbm(nx, phase, p.harmonics || 3) * warpAmt;
+               const wy = GS.fbm(nx + 10, phase + 10, p.harmonics || 3) * warpAmt;
+
+               const n = GS.fbm(nx + wx, phase + wy, p.harmonics || 3);
+
+               let drip = Math.sin((nx + wx)*dScale + phase);
+               // using Math.max with a threshold makes the drips only appear sporadically
+               drip = Math.max(0, drip - 0.5) * 2.0;
+               drip = Math.pow(drip, 2) * 1.5 * dAmt;
+
+               let y = baseY + n * p.amplitude + drip * p.amplitude;
+
+               points.push({x, y});
+           }
+
+           cx.lineTo(points[0].x, points[0].y);
+           for (let j = 1; j < points.length - 2; j++) {
+               const xc = (points[j].x + points[j + 1].x) / 2;
+               const yc = (points[j].y + points[j + 1].y) / 2;
+               cx.quadraticCurveTo(points[j].x, points[j].y, xc, yc);
+           }
+           cx.quadraticCurveTo(
+               points[points.length - 2].x, points[points.length - 2].y,
+               points[points.length - 1].x, points[points.length - 1].y
+           );
+
+           cx.lineTo(W*2, H); // Bottom right
+           cx.lineTo(-W, H); // Bottom left
+           cx.closePath();
+           cx.globalAlpha = 1.0; // Opaque shapes for liquid
+           cx.fill();
+       }
+    } else {
+      for (let pi2 = 0; pi2 < p.pathCount; pi2++) {
+        const t = pi2 / p.pathCount;
+        const col = p.colorMode === 'gradient' ? GS.gradientAt(stops, t)
+          : GS.getPalette(p.palette||'Terminal')[Math.floor(rng()*5)];
+        cx.strokeStyle = col;
+        cx.lineWidth = p.lineWeight * (0.4 + rng() * 0.6);
+        cx.globalAlpha = 0.6 + rng() * 0.4;
+        cx.beginPath();
+
+        let px = rng() * W, py = rng() * H;
+        cx.moveTo(px, py);
+        const steps = 60 + Math.floor(rng() * 40);
+        for (let s = 0; s < steps; s++) {
+          const ang = GS.fbm(px/W*p.frequency + p.seed/100, py/H*p.frequency + p.seed/100, 3) * Math.PI * 2 * p.harmonics;
+          const wob = (rng()-0.5) * p.wobble * 0.5;
+          const sp = (p.amplitude / steps) * 3;
+          const nx = px + Math.cos(ang + wob) * sp;
+          const ny = py + Math.sin(ang + wob) * sp;
+          if (p.roughness > 0) {
+            cx.bezierCurveTo(
+              px+(rng()-0.5)*p.roughness, py+(rng()-0.5)*p.roughness,
+              nx+(rng()-0.5)*p.roughness, ny+(rng()-0.5)*p.roughness,
+              nx, ny
+            );
+          } else { cx.lineTo(nx, ny); }
+          px = Math.max(0, Math.min(W, nx));
+          py = Math.max(0, Math.min(H, ny));
+        }
+        if (p.pathType === 'Filled') { cx.closePath(); cx.fillStyle = col; cx.fill(); }
+        else cx.stroke();
       }
-      if (p.pathType === 'Filled') { cx.closePath(); cx.fillStyle = col; cx.fill(); }
-      else cx.stroke();
     }
     cx.globalAlpha = 1;
     cx.shadowBlur = 0; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;

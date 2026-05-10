@@ -3,13 +3,31 @@
 // ═══════════════════════════════════════════════════════════════
 const App = (() => {
 
-const TOOL_ORDER = [
-  'blocks','gradients','meshGradient','blobs','sideWaves','lines','organic','plotter','topo','marble',
-  'ascii','dither','noise','circles','typography','waves','voronoi',
-  'fractal','pixelSort','truchet','crystal','spirograph','flowField',
-  'space','nature','clouds','paint','matrix',
-  'ambient','grid','contours'
+const TOOL_CATALOG = [
+  { id: 'gradients', category: 'Color' },
+  { id: 'meshGradient', category: 'Color' },
+  { id: 'noise', category: 'Texture' },
+  { id: 'topo', category: 'Texture' },
+  { id: 'contours', category: 'Texture' },
+  { id: 'blobs', category: 'Organic' },
+  { id: 'sideWaves', category: 'Organic' },
+  { id: 'waves', category: 'Organic' },
+  { id: 'flowField', category: 'Organic' },
+  { id: 'voronoi', category: 'Geometry' },
+  { id: 'truchet', category: 'Geometry' },
+  { id: 'typography', category: 'Type' },
+  { id: 'crystal', category: 'Geometry' },
+  { id: 'space', category: 'Scene' },
+  { id: 'clouds', category: 'Scene' },
+  { id: 'paint', category: 'Art' },
+  { id: 'nature', category: 'Scene' },
+  { id: 'organic', category: 'Organic' },
+  { id: 'lines', category: 'Geometry' },
+  { id: 'plotter', category: 'Geometry' },
+  { id: 'blocks', category: 'Geometry' }
 ];
+
+const TOOL_ORDER = TOOL_CATALOG.map(t => t.id);
 
 // ── Default params ────────────────────────────────────────────
 const DEFAULTS = {
@@ -62,6 +80,7 @@ window.current_tool = () => current;
 window.globalFX = { blur: 0, vignette: 0, smoothness: 0, grain: 0 };
 let renderTimer = null;
 let loadedImage = null;
+let interactivePreviewScale = 1;
 
 // Deep clone defaults
 function resetParams(tool) {
@@ -699,6 +718,69 @@ function buildPanel(tool) {
 }
 
 
+
+function presetStorageKey(tool) { return `genstudio-presets:${tool}`; }
+function loadPresetMap(tool) {
+  try { return JSON.parse(localStorage.getItem(presetStorageKey(tool)) || '{}'); }
+  catch { return {}; }
+}
+function savePresetMap(tool, data) {
+  localStorage.setItem(presetStorageKey(tool), JSON.stringify(data));
+}
+function buildPresetBar(tool) {
+  const map = loadPresetMap(tool);
+  const names = Object.keys(map).sort();
+  const options = ['<option value="">Preset: Default</option>', ...names.map(n => `<option value="${n}">${n}</option>`)].join('');
+  return `<div class="preset-bar">
+    <select id="preset-select">${options}</select>
+    <button class="btn-ghost" id="preset-save" type="button">Save</button>
+    <button class="btn-ghost" id="preset-load" type="button">Load</button>
+    <button class="btn-ghost" id="preset-del" type="button">Delete</button>
+  </div>`;
+}
+function bindPresetBar(tool) {
+  const sel = document.getElementById('preset-select');
+  const saveBtn = document.getElementById('preset-save');
+  const loadBtn = document.getElementById('preset-load');
+  const delBtn = document.getElementById('preset-del');
+  if (!sel || !saveBtn || !loadBtn || !delBtn) return;
+
+  saveBtn.addEventListener('click', () => {
+    const name = (prompt('Preset name?') || '').trim();
+    if (!name) return;
+    const map = loadPresetMap(tool);
+    map[name] = JSON.parse(JSON.stringify(params[tool]));
+    savePresetMap(tool, map);
+    GS.toast('Preset saved');
+    switchTool(tool);
+  });
+
+  loadBtn.addEventListener('click', () => {
+    const name = sel.value;
+    if (!name) {
+      resetParams(tool);
+      switchTool(tool);
+      GS.toast('Loaded default');
+      return;
+    }
+    const map = loadPresetMap(tool);
+    if (!map[name]) return;
+    params[tool] = JSON.parse(JSON.stringify(map[name]));
+    switchTool(tool);
+    GS.toast('Preset loaded');
+  });
+
+  delBtn.addEventListener('click', () => {
+    const name = sel.value;
+    if (!name) return;
+    const map = loadPresetMap(tool);
+    delete map[name];
+    savePresetMap(tool, map);
+    GS.toast('Preset deleted');
+    switchTool(tool);
+  });
+}
+
 // ── Switch tool ───────────────────────────────────────────────
 function switchTool(id) {
   if (!TOOLS[id]) return;
@@ -729,7 +811,8 @@ function switchTool(id) {
   // build sidebar
   const sc = document.getElementById('sidebar-content');
   if (sc) {
-    sc.innerHTML = buildPanel(id);
+    sc.innerHTML = buildPresetBar(id) + buildPanel(id);
+    bindPresetBar(id);
     bindSection(id);
     sc.querySelectorAll('.sec-hdr').forEach(h => {
       h.addEventListener('click', () => h.closest('.sec').classList.toggle('closed'));
@@ -753,8 +836,12 @@ function bindSection(tool) {
       p[el.id] = v;
       const vEl = document.getElementById('v_' + el.id);
       if (vEl) vEl.textContent = el.value + (el.dataset.suffix || '');
-      schedRender();
+      schedRender(10, 0.6);
     });
+  });
+
+  sc.querySelectorAll('input[type=range]').forEach(el => {
+    el.addEventListener('change', () => schedRender(10, 1));
   });
 
   // Selects
@@ -770,7 +857,7 @@ function bindSection(tool) {
         }
         switchTool(current);
       }
-      schedRender();
+      schedRender(10, 0.6);
     });
   });
 
@@ -788,7 +875,7 @@ function bindSection(tool) {
       }
       p.customColors.splice(customIdx, 1);
       switchTool(current); // re-render sidebar
-      schedRender();
+      schedRender(10, 0.6);
     });
   });
 
@@ -804,7 +891,7 @@ function bindSection(tool) {
         // Duplicate the last color
         p.customColors.push(p.customColors[p.customColors.length - 1] || '#000000');
         switchTool(current); // re-render sidebar
-        schedRender();
+        schedRender(10, 0.6);
       }
     });
   });
@@ -850,7 +937,7 @@ function bindSection(tool) {
         p.stops[2][1] = p.c2 || p.stops[2][1];
       }
 
-      schedRender();
+      schedRender(10, 0.6);
     });
   });
 
@@ -859,7 +946,7 @@ function bindSection(tool) {
     el.addEventListener('click', () => {
       el.classList.toggle('on');
       p[el.id] = el.classList.contains('on');
-      schedRender();
+      schedRender(10, 0.6);
     });
   });
 
@@ -906,7 +993,8 @@ function bindUpload(inputId, zoneId) {
 }
 
 // ── Render ────────────────────────────────────────────────────
-function schedRender(delay=10) {
+function schedRender(delay=10, previewScale=1) {
+  interactivePreviewScale = previewScale;
   if (renderTimer) cancelAnimationFrame(renderTimer);
   renderTimer = requestAnimationFrame(() => setTimeout(doRender, delay));
 }
@@ -918,8 +1006,10 @@ function doRender() {
 
   // Resize canvas if needed
   const w = p.w || 1200, h = p.h || 1200;
-  if (canvas.width !== w) canvas.width = w;
-  if (canvas.height !== h) canvas.height = h;
+  const renderW = Math.max(200, Math.round(w * interactivePreviewScale));
+  const renderH = Math.max(200, Math.round(h * interactivePreviewScale));
+  if (canvas.width !== renderW) canvas.width = renderW;
+  if (canvas.height !== renderH) canvas.height = renderH;
 
   try {
 
@@ -935,8 +1025,24 @@ function doRender() {
         p.stops[2][1] = p.c2 || p.stops[2][1];
     }
 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.filter = 'none';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    tool.render(canvas, ctx, p, loadedImage);
+    if (interactivePreviewScale !== 1) {
+      ctx.save();
+      ctx.scale(interactivePreviewScale, interactivePreviewScale);
+      const proxyCanvas = {
+        width: w,
+        height: h,
+        getContext: () => ctx
+      };
+      tool.render(proxyCanvas, ctx, p, loadedImage);
+      ctx.restore();
+    } else {
+      tool.render(canvas, ctx, p, loadedImage);
+    }
   } catch(e) {
     console.error('[GenStudio] Render error in', current, ':', e);
     // Show error on canvas
@@ -947,7 +1053,7 @@ function doRender() {
 
   // Update status
   const stat = document.getElementById('status-text');
-  if (stat) stat.textContent = `${current.toUpperCase()} · ${w}×${h}`;
+  if (stat) stat.textContent = `${current.toUpperCase()} · ${w}×${h}${interactivePreviewScale !== 1 ? ` · PREVIEW ${Math.round(interactivePreviewScale * 100)}%` : ''}`;
 }
 
 // ── Randomize ─────────────────────────────────────────────────
@@ -1034,7 +1140,7 @@ function init() {
 
         sizeGrid.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
-        schedRender();
+        schedRender(10, 0.6);
       });
     });
   }
@@ -1046,14 +1152,14 @@ function init() {
     gcw.addEventListener('change', () => {
       params[current].w = Math.max(100, Math.min(4096, parseInt(gcw.value)||800));
       sizeGrid.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
-      schedRender();
+      schedRender(10, 0.6);
     });
   }
   if (gch) {
     gch.addEventListener('change', () => {
       params[current].h = Math.max(100, Math.min(4096, parseInt(gch.value)||800));
       sizeGrid.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
-      schedRender();
+      schedRender(10, 0.6);
     });
   }
 
@@ -1067,24 +1173,37 @@ function init() {
         window.globalFX[id] = val;
         const vEl = document.getElementById('v_global-' + id);
         if (vEl) vEl.textContent = val;
-        schedRender();
+        schedRender(10, 0.6);
       });
     }
   });
 
   // Build nav
   const nav = document.getElementById('tool-nav');
-  TOOL_ORDER.forEach((id, i) => {
+  let prevCategory = null;
+  TOOL_CATALOG.forEach(({ id, category }) => {
     if (!TOOLS[id]) return;
-    if (i === 7 || i === 14) {
-      const sep = document.createElement('div');
-      sep.className = 'nav-sep'; nav.appendChild(sep);
+    if (prevCategory !== category) {
+      if (prevCategory) {
+        const sep = document.createElement('div');
+        sep.className = 'nav-sep';
+        nav.appendChild(sep);
+      }
+      const hdr = document.createElement('div');
+      hdr.className = 'nav-cat';
+      hdr.textContent = category.toUpperCase();
+      nav.appendChild(hdr);
     }
+
     const btn = document.createElement('button');
-    btn.className = 'nav-item'; btn.dataset.tool = id;
+    btn.className = 'nav-item';
+    btn.dataset.tool = id;
+    btn.dataset.category = category.toLowerCase();
     btn.innerHTML = `${TOOLS[id].icon}<span class="tip">${TOOLS[id].name}</span>`;
     btn.addEventListener('click', () => switchTool(id));
     nav.appendChild(btn);
+
+    prevCategory = category;
   });
 
 
@@ -1095,16 +1214,45 @@ function init() {
       const val = e.target.value.toLowerCase();
       const navItems = document.querySelectorAll('.nav-item');
       navItems.forEach(item => {
-        const toolName = item.querySelector('.tip').textContent.toLowerCase();
-        if (toolName.includes(val)) {
-          item.style.display = 'flex';
-        } else {
-          item.style.display = 'none';
-        }
+        const tip = item.querySelector('.tip');
+        const toolName = (tip?.textContent || item.textContent || '').toLowerCase();
+        const category = (item.dataset.category || '').toLowerCase();
+        item.style.display = (toolName.includes(val) || category.includes(val)) ? 'flex' : 'none';
       });
-      // Handle separators based on visibility of items (optional, but cleaner)
+
+
+      const navCats = document.querySelectorAll('.nav-cat');
+      navCats.forEach(cat => {
+        if (!val) {
+          cat.style.display = 'block';
+          return;
+        }
+        let next = cat.nextElementSibling;
+        let hasVisible = false;
+        while (next && !next.classList.contains('nav-cat')) {
+          if (next.classList.contains('nav-item') && next.style.display !== 'none') {
+            hasVisible = true;
+            break;
+          }
+          next = next.nextElementSibling;
+        }
+        cat.style.display = hasVisible ? 'block' : 'none';
+      });
+
+      // Hide separators that would otherwise appear between hidden items.
       const navSeps = document.querySelectorAll('.nav-sep');
-      navSeps.forEach(sep => sep.style.display = val ? 'none' : 'block');
+      navSeps.forEach(sep => {
+        if (!val) {
+          sep.style.display = 'block';
+          return;
+        }
+
+        const prev = sep.previousElementSibling;
+        const next = sep.nextElementSibling;
+        const prevVisible = prev && prev.classList.contains('nav-item') && prev.style.display !== 'none';
+        const nextVisible = next && next.classList.contains('nav-item') && next.style.display !== 'none';
+        sep.style.display = prevVisible && nextVisible ? 'block' : 'none';
+      });
     });
   }
 
@@ -1125,41 +1273,49 @@ function init() {
 
   document.getElementById('confirm-download-btn')?.addEventListener('click', () => {
       document.getElementById('download-modal').style.display = 'none';
-      const scale = parseInt(document.getElementById('export-quality').value || '1');
+      const requestedScale = parseInt(document.getElementById('export-quality').value || '1');
       const format = document.getElementById('export-format').value || 'png';
 
-      const p = JSON.parse(JSON.stringify(params[current])); // Deep clone
-      const baseW = p.w || 1200;
-      const baseH = p.h || 1200;
-      const exportW = baseW * scale;
-      const exportH = baseH * scale;
-      p.w = exportW;
-      p.h = exportH;
+      const baseParams = JSON.parse(JSON.stringify(params[current])); // Deep clone
+      const baseW = baseParams.w || 1200;
+      const baseH = baseParams.h || 1200;
+      const MAX_EXPORT_PIXELS = 40000000;
 
-      const realCanvas = document.createElement('canvas');
-      realCanvas.width = exportW;
-      realCanvas.height = exportH;
-      const realCtx = realCanvas.getContext('2d');
+      if (!TOOLS[current]) return;
 
-      const proxyCanvas = {
-          width: exportW,
-          height: exportH,
-          getContext: () => realCtx,
-          toDataURL: (...args) => realCanvas.toDataURL(...args)
-      };
+      // Try requested scale first, then gracefully degrade (5x -> 4x -> 3x -> 2x -> 1x)
+      const attempts = [];
+      for (let s = requestedScale; s >= 1; s--) attempts.push(s);
 
-      try {
-          if (!TOOLS[current]) return;
+      let exported = false;
+      for (const scale of attempts) {
+        const exportW = baseW * scale;
+        const exportH = baseH * scale;
+        const totalPixels = exportW * exportH;
 
-          // Instead of modifying p.w/p.h (which breaks unscaled drawing logic),
-          // we use the original dimensions and scale the context.
-          // This guarantees 1:1 visual parity with the viewport at higher resolutions.
-          p.w = baseW;
-          p.h = baseH;
+        if (totalPixels > MAX_EXPORT_PIXELS) {
+          continue;
+        }
+
+        const realCanvas = document.createElement('canvas');
+        realCanvas.width = exportW;
+        realCanvas.height = exportH;
+        const realCtx = realCanvas.getContext('2d', { willReadFrequently: true });
+        if (!realCtx) continue;
+
+        try {
+          const renderParams = JSON.parse(JSON.stringify(baseParams));
+          renderParams.w = baseW;
+          renderParams.h = baseH;
+
+          realCtx.setTransform(1, 0, 0, 1, 0, 0);
+          realCtx.globalAlpha = 1;
+          realCtx.globalCompositeOperation = 'source-over';
+          realCtx.filter = 'none';
+          realCtx.clearRect(0, 0, exportW, exportH);
 
           realCtx.save();
           realCtx.scale(scale, scale);
-
           const proxyCanvasScaled = {
             width: baseW,
             height: baseH,
@@ -1167,21 +1323,32 @@ function init() {
             toDataURL: (...args) => realCanvas.toDataURL(...args)
           };
 
-          TOOLS[current].render(proxyCanvasScaled, realCtx, p, loadedImage);
+          TOOLS[current].render(proxyCanvasScaled, realCtx, renderParams, loadedImage);
           realCtx.restore();
 
-          // Apply post-FX if they exist, scaled appropriately
           if (window.globalFX && typeof applyPostFX === 'function') {
-             applyPostFX(realCtx, exportW, exportH, window.globalFX);
+            const fxForExport = { ...window.globalFX };
+            if (totalPixels > 16000000) fxForExport.grain = 0;
+            applyPostFX(realCtx, exportW, exportH, fxForExport);
           }
 
           if (format === 'png') GS.exportPNG(realCanvas, current);
           if (format === 'jpg') GS.exportJPG(realCanvas, current);
           if (format === 'webp') GS.exportWebP(realCanvas, current);
           if (format === 'svg') GS.exportSVG(realCanvas, current);
-      } catch (e) {
-          console.error(e);
-          GS.toast('Export Failed');
+
+          if (scale !== requestedScale) {
+            GS.toast(`Exported at ${scale}x (requested ${requestedScale}x due to memory limits)`);
+          }
+          exported = true;
+          break;
+        } catch (e) {
+          console.error('[Export] scale failed:', scale, e);
+        }
+      }
+
+      if (!exported) {
+        GS.toast('Export Failed: try smaller canvas or lower quality');
       }
   });
 

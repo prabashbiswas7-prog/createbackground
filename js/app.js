@@ -935,6 +935,10 @@ function doRender() {
         p.stops[2][1] = p.c2 || p.stops[2][1];
     }
 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.filter = 'none';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     tool.render(canvas, ctx, p, loadedImage);
   } catch(e) {
@@ -1095,16 +1099,25 @@ function init() {
       const val = e.target.value.toLowerCase();
       const navItems = document.querySelectorAll('.nav-item');
       navItems.forEach(item => {
-        const toolName = item.querySelector('.tip').textContent.toLowerCase();
-        if (toolName.includes(val)) {
-          item.style.display = 'flex';
-        } else {
-          item.style.display = 'none';
-        }
+        const tip = item.querySelector('.tip');
+        const toolName = (tip?.textContent || item.textContent || '').toLowerCase();
+        item.style.display = toolName.includes(val) ? 'flex' : 'none';
       });
-      // Handle separators based on visibility of items (optional, but cleaner)
+
+      // Hide separators that would otherwise appear between hidden items.
       const navSeps = document.querySelectorAll('.nav-sep');
-      navSeps.forEach(sep => sep.style.display = val ? 'none' : 'block');
+      navSeps.forEach(sep => {
+        if (!val) {
+          sep.style.display = 'block';
+          return;
+        }
+
+        const prev = sep.previousElementSibling;
+        const next = sep.nextElementSibling;
+        const prevVisible = prev && prev.classList.contains('nav-item') && prev.style.display !== 'none';
+        const nextVisible = next && next.classList.contains('nav-item') && next.style.display !== 'none';
+        sep.style.display = prevVisible && nextVisible ? 'block' : 'none';
+      });
     });
   }
 
@@ -1167,6 +1180,9 @@ function init() {
             toDataURL: (...args) => realCanvas.toDataURL(...args)
           };
 
+          realCtx.globalAlpha = 1;
+          realCtx.globalCompositeOperation = 'source-over';
+          realCtx.filter = 'none';
           TOOLS[current].render(proxyCanvasScaled, realCtx, p, loadedImage);
           realCtx.restore();
 

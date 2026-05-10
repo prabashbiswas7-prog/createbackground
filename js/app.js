@@ -3,13 +3,31 @@
 // ═══════════════════════════════════════════════════════════════
 const App = (() => {
 
-const TOOL_ORDER = [
-  'blocks','gradients','meshGradient','blobs','sideWaves','lines','organic','plotter','topo','marble',
-  'ascii','dither','noise','circles','typography','waves','voronoi',
-  'fractal','pixelSort','truchet','crystal','spirograph','flowField',
-  'space','nature','clouds','paint','matrix',
-  'ambient','grid','contours'
+const TOOL_CATALOG = [
+  { id: 'gradients', category: 'Color' },
+  { id: 'meshGradient', category: 'Color' },
+  { id: 'noise', category: 'Texture' },
+  { id: 'topo', category: 'Texture' },
+  { id: 'contours', category: 'Texture' },
+  { id: 'blobs', category: 'Organic' },
+  { id: 'sideWaves', category: 'Organic' },
+  { id: 'waves', category: 'Organic' },
+  { id: 'flowField', category: 'Organic' },
+  { id: 'voronoi', category: 'Geometry' },
+  { id: 'truchet', category: 'Geometry' },
+  { id: 'typography', category: 'Type' },
+  { id: 'crystal', category: 'Geometry' },
+  { id: 'space', category: 'Scene' },
+  { id: 'clouds', category: 'Scene' },
+  { id: 'paint', category: 'Art' },
+  { id: 'nature', category: 'Scene' },
+  { id: 'organic', category: 'Organic' },
+  { id: 'lines', category: 'Geometry' },
+  { id: 'plotter', category: 'Geometry' },
+  { id: 'blocks', category: 'Geometry' }
 ];
+
+const TOOL_ORDER = TOOL_CATALOG.map(t => t.id);
 
 // ── Default params ────────────────────────────────────────────
 const DEFAULTS = {
@@ -935,6 +953,10 @@ function doRender() {
         p.stops[2][1] = p.c2 || p.stops[2][1];
     }
 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.filter = 'none';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     tool.render(canvas, ctx, p, loadedImage);
   } catch(e) {
@@ -1074,17 +1096,24 @@ function init() {
 
   // Build nav
   const nav = document.getElementById('tool-nav');
-  TOOL_ORDER.forEach((id, i) => {
+  let prevCategory = null;
+  TOOL_CATALOG.forEach(({ id, category }) => {
     if (!TOOLS[id]) return;
-    if (i === 7 || i === 14) {
+    if (prevCategory && prevCategory !== category) {
       const sep = document.createElement('div');
-      sep.className = 'nav-sep'; nav.appendChild(sep);
+      sep.className = 'nav-sep';
+      nav.appendChild(sep);
     }
+
     const btn = document.createElement('button');
-    btn.className = 'nav-item'; btn.dataset.tool = id;
+    btn.className = 'nav-item';
+    btn.dataset.tool = id;
+    btn.dataset.category = category.toLowerCase();
     btn.innerHTML = `${TOOLS[id].icon}<span class="tip">${TOOLS[id].name}</span>`;
     btn.addEventListener('click', () => switchTool(id));
     nav.appendChild(btn);
+
+    prevCategory = category;
   });
 
 
@@ -1095,16 +1124,26 @@ function init() {
       const val = e.target.value.toLowerCase();
       const navItems = document.querySelectorAll('.nav-item');
       navItems.forEach(item => {
-        const toolName = item.querySelector('.tip').textContent.toLowerCase();
-        if (toolName.includes(val)) {
-          item.style.display = 'flex';
-        } else {
-          item.style.display = 'none';
-        }
+        const tip = item.querySelector('.tip');
+        const toolName = (tip?.textContent || item.textContent || '').toLowerCase();
+        const category = (item.dataset.category || '').toLowerCase();
+        item.style.display = (toolName.includes(val) || category.includes(val)) ? 'flex' : 'none';
       });
-      // Handle separators based on visibility of items (optional, but cleaner)
+
+      // Hide separators that would otherwise appear between hidden items.
       const navSeps = document.querySelectorAll('.nav-sep');
-      navSeps.forEach(sep => sep.style.display = val ? 'none' : 'block');
+      navSeps.forEach(sep => {
+        if (!val) {
+          sep.style.display = 'block';
+          return;
+        }
+
+        const prev = sep.previousElementSibling;
+        const next = sep.nextElementSibling;
+        const prevVisible = prev && prev.classList.contains('nav-item') && prev.style.display !== 'none';
+        const nextVisible = next && next.classList.contains('nav-item') && next.style.display !== 'none';
+        sep.style.display = prevVisible && nextVisible ? 'block' : 'none';
+      });
     });
   }
 
@@ -1125,41 +1164,49 @@ function init() {
 
   document.getElementById('confirm-download-btn')?.addEventListener('click', () => {
       document.getElementById('download-modal').style.display = 'none';
-      const scale = parseInt(document.getElementById('export-quality').value || '1');
+      const requestedScale = parseInt(document.getElementById('export-quality').value || '1');
       const format = document.getElementById('export-format').value || 'png';
 
-      const p = JSON.parse(JSON.stringify(params[current])); // Deep clone
-      const baseW = p.w || 1200;
-      const baseH = p.h || 1200;
-      const exportW = baseW * scale;
-      const exportH = baseH * scale;
-      p.w = exportW;
-      p.h = exportH;
+      const baseParams = JSON.parse(JSON.stringify(params[current])); // Deep clone
+      const baseW = baseParams.w || 1200;
+      const baseH = baseParams.h || 1200;
+      const MAX_EXPORT_PIXELS = 40000000;
 
-      const realCanvas = document.createElement('canvas');
-      realCanvas.width = exportW;
-      realCanvas.height = exportH;
-      const realCtx = realCanvas.getContext('2d');
+      if (!TOOLS[current]) return;
 
-      const proxyCanvas = {
-          width: exportW,
-          height: exportH,
-          getContext: () => realCtx,
-          toDataURL: (...args) => realCanvas.toDataURL(...args)
-      };
+      // Try requested scale first, then gracefully degrade (5x -> 4x -> 3x -> 2x -> 1x)
+      const attempts = [];
+      for (let s = requestedScale; s >= 1; s--) attempts.push(s);
 
-      try {
-          if (!TOOLS[current]) return;
+      let exported = false;
+      for (const scale of attempts) {
+        const exportW = baseW * scale;
+        const exportH = baseH * scale;
+        const totalPixels = exportW * exportH;
 
-          // Instead of modifying p.w/p.h (which breaks unscaled drawing logic),
-          // we use the original dimensions and scale the context.
-          // This guarantees 1:1 visual parity with the viewport at higher resolutions.
-          p.w = baseW;
-          p.h = baseH;
+        if (totalPixels > MAX_EXPORT_PIXELS) {
+          continue;
+        }
+
+        const realCanvas = document.createElement('canvas');
+        realCanvas.width = exportW;
+        realCanvas.height = exportH;
+        const realCtx = realCanvas.getContext('2d', { willReadFrequently: true });
+        if (!realCtx) continue;
+
+        try {
+          const renderParams = JSON.parse(JSON.stringify(baseParams));
+          renderParams.w = baseW;
+          renderParams.h = baseH;
+
+          realCtx.setTransform(1, 0, 0, 1, 0, 0);
+          realCtx.globalAlpha = 1;
+          realCtx.globalCompositeOperation = 'source-over';
+          realCtx.filter = 'none';
+          realCtx.clearRect(0, 0, exportW, exportH);
 
           realCtx.save();
           realCtx.scale(scale, scale);
-
           const proxyCanvasScaled = {
             width: baseW,
             height: baseH,
@@ -1167,21 +1214,32 @@ function init() {
             toDataURL: (...args) => realCanvas.toDataURL(...args)
           };
 
-          TOOLS[current].render(proxyCanvasScaled, realCtx, p, loadedImage);
+          TOOLS[current].render(proxyCanvasScaled, realCtx, renderParams, loadedImage);
           realCtx.restore();
 
-          // Apply post-FX if they exist, scaled appropriately
           if (window.globalFX && typeof applyPostFX === 'function') {
-             applyPostFX(realCtx, exportW, exportH, window.globalFX);
+            const fxForExport = { ...window.globalFX };
+            if (totalPixels > 16000000) fxForExport.grain = 0;
+            applyPostFX(realCtx, exportW, exportH, fxForExport);
           }
 
           if (format === 'png') GS.exportPNG(realCanvas, current);
           if (format === 'jpg') GS.exportJPG(realCanvas, current);
           if (format === 'webp') GS.exportWebP(realCanvas, current);
           if (format === 'svg') GS.exportSVG(realCanvas, current);
-      } catch (e) {
-          console.error(e);
-          GS.toast('Export Failed');
+
+          if (scale !== requestedScale) {
+            GS.toast(`Exported at ${scale}x (requested ${requestedScale}x due to memory limits)`);
+          }
+          exported = true;
+          break;
+        } catch (e) {
+          console.error('[Export] scale failed:', scale, e);
+        }
+      }
+
+      if (!exported) {
+        GS.toast('Export Failed: try smaller canvas or lower quality');
       }
   });
 

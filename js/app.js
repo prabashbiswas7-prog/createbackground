@@ -935,6 +935,10 @@ function doRender() {
         p.stops[2][1] = p.c2 || p.stops[2][1];
     }
 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.filter = 'none';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     tool.render(canvas, ctx, p, loadedImage);
   } catch(e) {
@@ -1176,6 +1180,9 @@ function init() {
             toDataURL: (...args) => realCanvas.toDataURL(...args)
           };
 
+          realCtx.globalAlpha = 1;
+          realCtx.globalCompositeOperation = 'source-over';
+          realCtx.filter = 'none';
           TOOLS[current].render(proxyCanvasScaled, realCtx, p, loadedImage);
           realCtx.restore();
 

@@ -183,7 +183,7 @@ function applyGrain(ctx, w, h, amount) {
 }
 
 function applyPostFX(cx, w, h, p) {
-    const globalFX = window.globalFX || { blur: 0, vignette: 0, smoothness: 0, grain: 0 };
+    const globalFX = p || window.globalFX || { blur: 0, vignette: 0, smoothness: 0, grain: 0 };
 
     if (globalFX.blur > 0) {
       const blurAmount = (globalFX.blur / 100) * 10;

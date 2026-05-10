@@ -519,10 +519,33 @@ input[type=text]:focus, input[type=number]:focus { border-color: var(--text-mute
 .nav-item .tip {
   margin-left: 10px;
 }
+.nav-cat {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: var(--text-dark);
+  margin: 10px 8px 6px;
+  text-transform: uppercase;
+}
+
 .nav-sep {
   height: 1px;
   background: var(--border-color);
   margin: 10px 0;
+}
+
+
+.preset-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.preset-bar select {
+  grid-column: 1 / -1;
+}
+.preset-bar .btn-ghost {
+  font-size: 10px;
+  padding: 6px;
 }
 
 /* Fixes for right sidebar injected controls */

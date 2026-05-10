@@ -80,6 +80,7 @@ window.current_tool = () => current;
 window.globalFX = { blur: 0, vignette: 0, smoothness: 0, grain: 0 };
 let renderTimer = null;
 let loadedImage = null;
+let interactivePreviewScale = 1;
 
 // Deep clone defaults
 function resetParams(tool) {
@@ -924,7 +925,8 @@ function bindUpload(inputId, zoneId) {
 }
 
 // ── Render ────────────────────────────────────────────────────
-function schedRender(delay=10) {
+function schedRender(delay=10, previewScale=1) {
+  interactivePreviewScale = previewScale;
   if (renderTimer) cancelAnimationFrame(renderTimer);
   renderTimer = requestAnimationFrame(() => setTimeout(doRender, delay));
 }
@@ -936,8 +938,10 @@ function doRender() {
 
   // Resize canvas if needed
   const w = p.w || 1200, h = p.h || 1200;
-  if (canvas.width !== w) canvas.width = w;
-  if (canvas.height !== h) canvas.height = h;
+  const renderW = Math.max(200, Math.round(w * interactivePreviewScale));
+  const renderH = Math.max(200, Math.round(h * interactivePreviewScale));
+  if (canvas.width !== renderW) canvas.width = renderW;
+  if (canvas.height !== renderH) canvas.height = renderH;
 
   try {
 
@@ -958,7 +962,19 @@ function doRender() {
     ctx.globalCompositeOperation = 'source-over';
     ctx.filter = 'none';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    tool.render(canvas, ctx, p, loadedImage);
+    if (interactivePreviewScale !== 1) {
+      ctx.save();
+      ctx.scale(interactivePreviewScale, interactivePreviewScale);
+      const proxyCanvas = {
+        width: w,
+        height: h,
+        getContext: () => ctx
+      };
+      tool.render(proxyCanvas, ctx, p, loadedImage);
+      ctx.restore();
+    } else {
+      tool.render(canvas, ctx, p, loadedImage);
+    }
   } catch(e) {
     console.error('[GenStudio] Render error in', current, ':', e);
     // Show error on canvas
@@ -969,7 +985,7 @@ function doRender() {
 
   // Update status
   const stat = document.getElementById('status-text');
-  if (stat) stat.textContent = `${current.toUpperCase()} · ${w}×${h}`;
+  if (stat) stat.textContent = `${current.toUpperCase()} · ${w}×${h}${interactivePreviewScale !== 1 ? ` · PREVIEW ${Math.round(interactivePreviewScale * 100)}%` : ''}`;
 }
 
 // ── Randomize ─────────────────────────────────────────────────
@@ -1099,10 +1115,16 @@ function init() {
   let prevCategory = null;
   TOOL_CATALOG.forEach(({ id, category }) => {
     if (!TOOLS[id]) return;
-    if (prevCategory && prevCategory !== category) {
-      const sep = document.createElement('div');
-      sep.className = 'nav-sep';
-      nav.appendChild(sep);
+    if (prevCategory !== category) {
+      if (prevCategory) {
+        const sep = document.createElement('div');
+        sep.className = 'nav-sep';
+        nav.appendChild(sep);
+      }
+      const hdr = document.createElement('div');
+      hdr.className = 'nav-cat';
+      hdr.textContent = category.toUpperCase();
+      nav.appendChild(hdr);
     }
 
     const btn = document.createElement('button');
@@ -1128,6 +1150,25 @@ function init() {
         const toolName = (tip?.textContent || item.textContent || '').toLowerCase();
         const category = (item.dataset.category || '').toLowerCase();
         item.style.display = (toolName.includes(val) || category.includes(val)) ? 'flex' : 'none';
+      });
+
+
+      const navCats = document.querySelectorAll('.nav-cat');
+      navCats.forEach(cat => {
+        if (!val) {
+          cat.style.display = 'block';
+          return;
+        }
+        let next = cat.nextElementSibling;
+        let hasVisible = false;
+        while (next && !next.classList.contains('nav-cat')) {
+          if (next.classList.contains('nav-item') && next.style.display !== 'none') {
+            hasVisible = true;
+            break;
+          }
+          next = next.nextElementSibling;
+        }
+        cat.style.display = hasVisible ? 'block' : 'none';
       });
 
       // Hide separators that would otherwise appear between hidden items.

@@ -519,6 +519,14 @@ input[type=text]:focus, input[type=number]:focus { border-color: var(--text-mute
 .nav-item .tip {
   margin-left: 10px;
 }
+.nav-cat {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: var(--text-dark);
+  margin: 10px 8px 6px;
+  text-transform: uppercase;
+}
+
 .nav-sep {
   height: 1px;
   background: var(--border-color);

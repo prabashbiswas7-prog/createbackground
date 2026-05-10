@@ -718,6 +718,69 @@ function buildPanel(tool) {
 }
 
 
+
+function presetStorageKey(tool) { return `genstudio-presets:${tool}`; }
+function loadPresetMap(tool) {
+  try { return JSON.parse(localStorage.getItem(presetStorageKey(tool)) || '{}'); }
+  catch { return {}; }
+}
+function savePresetMap(tool, data) {
+  localStorage.setItem(presetStorageKey(tool), JSON.stringify(data));
+}
+function buildPresetBar(tool) {
+  const map = loadPresetMap(tool);
+  const names = Object.keys(map).sort();
+  const options = ['<option value="">Preset: Default</option>', ...names.map(n => `<option value="${n}">${n}</option>`)].join('');
+  return `<div class="preset-bar">
+    <select id="preset-select">${options}</select>
+    <button class="btn-ghost" id="preset-save" type="button">Save</button>
+    <button class="btn-ghost" id="preset-load" type="button">Load</button>
+    <button class="btn-ghost" id="preset-del" type="button">Delete</button>
+  </div>`;
+}
+function bindPresetBar(tool) {
+  const sel = document.getElementById('preset-select');
+  const saveBtn = document.getElementById('preset-save');
+  const loadBtn = document.getElementById('preset-load');
+  const delBtn = document.getElementById('preset-del');
+  if (!sel || !saveBtn || !loadBtn || !delBtn) return;
+
+  saveBtn.addEventListener('click', () => {
+    const name = (prompt('Preset name?') || '').trim();
+    if (!name) return;
+    const map = loadPresetMap(tool);
+    map[name] = JSON.parse(JSON.stringify(params[tool]));
+    savePresetMap(tool, map);
+    GS.toast('Preset saved');
+    switchTool(tool);
+  });
+
+  loadBtn.addEventListener('click', () => {
+    const name = sel.value;
+    if (!name) {
+      resetParams(tool);
+      switchTool(tool);
+      GS.toast('Loaded default');
+      return;
+    }
+    const map = loadPresetMap(tool);
+    if (!map[name]) return;
+    params[tool] = JSON.parse(JSON.stringify(map[name]));
+    switchTool(tool);
+    GS.toast('Preset loaded');
+  });
+
+  delBtn.addEventListener('click', () => {
+    const name = sel.value;
+    if (!name) return;
+    const map = loadPresetMap(tool);
+    delete map[name];
+    savePresetMap(tool, map);
+    GS.toast('Preset deleted');
+    switchTool(tool);
+  });
+}
+
 // ── Switch tool ───────────────────────────────────────────────
 function switchTool(id) {
   if (!TOOLS[id]) return;
@@ -748,7 +811,8 @@ function switchTool(id) {
   // build sidebar
   const sc = document.getElementById('sidebar-content');
   if (sc) {
-    sc.innerHTML = buildPanel(id);
+    sc.innerHTML = buildPresetBar(id) + buildPanel(id);
+    bindPresetBar(id);
     bindSection(id);
     sc.querySelectorAll('.sec-hdr').forEach(h => {
       h.addEventListener('click', () => h.closest('.sec').classList.toggle('closed'));
@@ -772,8 +836,12 @@ function bindSection(tool) {
       p[el.id] = v;
       const vEl = document.getElementById('v_' + el.id);
       if (vEl) vEl.textContent = el.value + (el.dataset.suffix || '');
-      schedRender();
+      schedRender(10, 0.6);
     });
+  });
+
+  sc.querySelectorAll('input[type=range]').forEach(el => {
+    el.addEventListener('change', () => schedRender(10, 1));
   });
 
   // Selects
@@ -789,7 +857,7 @@ function bindSection(tool) {
         }
         switchTool(current);
       }
-      schedRender();
+      schedRender(10, 0.6);
     });
   });
 
@@ -807,7 +875,7 @@ function bindSection(tool) {
       }
       p.customColors.splice(customIdx, 1);
       switchTool(current); // re-render sidebar
-      schedRender();
+      schedRender(10, 0.6);
     });
   });
 
@@ -823,7 +891,7 @@ function bindSection(tool) {
         // Duplicate the last color
         p.customColors.push(p.customColors[p.customColors.length - 1] || '#000000');
         switchTool(current); // re-render sidebar
-        schedRender();
+        schedRender(10, 0.6);
       }
     });
   });
@@ -869,7 +937,7 @@ function bindSection(tool) {
         p.stops[2][1] = p.c2 || p.stops[2][1];
       }
 
-      schedRender();
+      schedRender(10, 0.6);
     });
   });
 
@@ -878,7 +946,7 @@ function bindSection(tool) {
     el.addEventListener('click', () => {
       el.classList.toggle('on');
       p[el.id] = el.classList.contains('on');
-      schedRender();
+      schedRender(10, 0.6);
     });
   });
 
@@ -1072,7 +1140,7 @@ function init() {
 
         sizeGrid.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
-        schedRender();
+        schedRender(10, 0.6);
       });
     });
   }
@@ -1084,14 +1152,14 @@ function init() {
     gcw.addEventListener('change', () => {
       params[current].w = Math.max(100, Math.min(4096, parseInt(gcw.value)||800));
       sizeGrid.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
-      schedRender();
+      schedRender(10, 0.6);
     });
   }
   if (gch) {
     gch.addEventListener('change', () => {
       params[current].h = Math.max(100, Math.min(4096, parseInt(gch.value)||800));
       sizeGrid.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
-      schedRender();
+      schedRender(10, 0.6);
     });
   }
 
@@ -1105,7 +1173,7 @@ function init() {
         window.globalFX[id] = val;
         const vEl = document.getElementById('v_global-' + id);
         if (vEl) vEl.textContent = val;
-        schedRender();
+        schedRender(10, 0.6);
       });
     }
   });
